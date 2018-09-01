@@ -1,0 +1,7 @@
+Dockerfile
+datasets
+Big-BWT/yeast.fasta
+*.sh
+Singularity*
+.git
+**/.git
