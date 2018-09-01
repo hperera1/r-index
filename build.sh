@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker build --tag r-index $* .
+docker build --tag benlangmead/r-index $* .
