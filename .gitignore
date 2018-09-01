@@ -2,3 +2,5 @@ build
 .*.swo
 .*.swp
 .DS_Store
+.vagrant
+.idea
