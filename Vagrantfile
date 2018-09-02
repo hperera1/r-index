@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
         aws.region = REGION
         aws.tags = { 'Application' => 'r-index' }
         aws.keypair_name = "r-index"
-        aws.instance_type = "r5.4xlarge"
+        aws.instance_type = "r5.24xlarge"
         if REGION == "us-east-1"
             aws.ami = "ami-0ff8a91507f77f867"
             aws.subnet_id = "subnet-1fc8de7a"
@@ -33,6 +33,7 @@ Vagrant.configure("2") do |config|
             aws.security_groups = ["sg-051ff8479e318f0ab"]  # allows just 22
         end
         aws.associate_public_ip = true
+        # 
         aws.block_device_mapping = [{
             'DeviceName' => "/dev/sdf",
             'VirtualName' => "gp2_1",
@@ -61,6 +62,7 @@ Vagrant.configure("2") do |config|
             'Ebs.DeleteOnTermination' => true,
             'Ebs.VolumeType' => 'gp2'
         }]
+        # 200 (GB) * ($0.1 per GB-month) / 30 (days/month) = $0.66 per day or $0.03 per hour
         override.ssh.username = "ec2-user"
         override.ssh.private_key_path = "~/.aws/r-index.pem"
         # Good bids:
@@ -71,15 +73,16 @@ Vagrant.configure("2") do |config|
         aws.region_config REGION do |region|
             region.spot_instance = true
             if REGION == "us-east-1"
-                region.spot_max_price = "0.35"
+                region.spot_max_price = "1.90"
             else
-                region.spot_max_price = "0.20"
+                region.spot_max_price = "1.10"
             end
         end
     end
 
     config.vm.provision "shell", privileged: true, name: "install Linux packages", inline: <<-SHELL
-        yum install -q -y aws-cli wget unzip tree sysstat mdadm docker
+        sudo yum-config-manager --enable epel
+        yum install -q -y aws-cli wget unzip tree sysstat mdadm docker zstd
         sudo service docker start
         sudo usermod -a -G docker ec2-user
     SHELL
@@ -134,7 +137,10 @@ Vagrant.configure("2") do |config|
     config.vm.provision "file", source: "~/.aws/config", destination: "~ec2-user/.aws/config"
 
     config.vm.provision "shell", privileged: false, name: "download inputs", inline: <<-SHELL
-        aws s3 sync --quiet s3://r-index-langmead/human_fas/ /work/human_fas/
+        mkdir -p /work/human_fas
+        aws s3 cp --quiet s3://r-index-langmead/human_fas/all_asm.fa.zst /work/human_fas/all_asm.fa.zst
+        zstd -d /work/human_fas/all_asm.fa.zst -o /work/human_fas/all_asm.fa
+        rm -f /work/human_fas/all_asm.fa.zst
         echo "Tree:"
         tree /work
     SHELL
@@ -146,8 +152,7 @@ Vagrant.configure("2") do |config|
             -v /work/output:/output \
             -v /work/human_fas:/fasta \
             benlangmead/r-index:latest \
-            bash -c "/usr/bin/time -v /code/release/ri-buildfasta -b bigbwt /fasta/hg19.fa > /output/hg19.fa.err 2>&1 && mv hg19.fa.log /output/"
-
+            bash -c "export PATH=\"\$PATH:/code/Big-BWT\" && /usr/bin/time -v /code/debug/ri-buildfasta -b bigbwt /fasta/all_asm.fa > /output/all_asm.fa.err 2>&1 && mv all_asm.fa.log /output/" && \
         aws s3 sync --quiet /output/ s3://r-index-langmead/results/
     SHELL
 end
