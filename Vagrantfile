@@ -9,8 +9,17 @@
 # Note: the standard vagrant-aws plugin does not have spot support
 
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'aws'
-#REGION = "us-east-1"
+# REGION = "us-east-1"
 REGION = "us-east-2"
+INSTANCE_TYPE = "r4.8xlarge"
+
+# Good bids:
+#              vCPU  GiB mem  us-east-1  us-east-2
+# r5.4xlarge     16      128       0.35       0.20
+# r5.12xlarge    48      384       1.00       0.60
+# r5.24xlarge    96      768       1.90       1.10
+
+BID_PRICE = "0.40"
 
 Vagrant.configure("2") do |config|
 
@@ -21,7 +30,7 @@ Vagrant.configure("2") do |config|
         aws.region = REGION
         aws.tags = { 'Application' => 'r-index' }
         aws.keypair_name = "r-index"
-        aws.instance_type = "r5.24xlarge"
+        aws.instance_type = INSTANCE_TYPE
         if REGION == "us-east-1"
             aws.ami = "ami-0ff8a91507f77f867"
             aws.subnet_id = "subnet-1fc8de7a"
@@ -33,50 +42,44 @@ Vagrant.configure("2") do |config|
             aws.security_groups = ["sg-051ff8479e318f0ab"]  # allows just 22
         end
         aws.associate_public_ip = true
-        # 
+        #
+        # If you change the number of volumes, you must also change mdadm commands below
+        #
         aws.block_device_mapping = [{
             'DeviceName' => "/dev/sdf",
             'VirtualName' => "gp2_1",
-            'Ebs.VolumeSize' => 50,
+            'Ebs.VolumeSize' => 75,
             'Ebs.DeleteOnTermination' => true,
             'Ebs.VolumeType' => 'gp2'
         },
         {
             'DeviceName' => "/dev/sdg",
             'VirtualName' => "gp2_2",
-            'Ebs.VolumeSize' => 50,
+            'Ebs.VolumeSize' => 75,
             'Ebs.DeleteOnTermination' => true,
             'Ebs.VolumeType' => 'gp2'
         },
         {
             'DeviceName' => "/dev/sdh",
             'VirtualName' => "gp2_3",
-            'Ebs.VolumeSize' => 50,
+            'Ebs.VolumeSize' => 75,
             'Ebs.DeleteOnTermination' => true,
             'Ebs.VolumeType' => 'gp2'
         },
         {
             'DeviceName' => "/dev/sdi",
             'VirtualName' => "gp2_4",
-            'Ebs.VolumeSize' => 50,
+            'Ebs.VolumeSize' => 75,
             'Ebs.DeleteOnTermination' => true,
             'Ebs.VolumeType' => 'gp2'
         }]
         # 200 (GB) * ($0.1 per GB-month) / 30 (days/month) = $0.66 per day or $0.03 per hour
+        
         override.ssh.username = "ec2-user"
         override.ssh.private_key_path = "~/.aws/r-index.pem"
-        # Good bids:
-        #              vCPU  GiB mem  us-east-1  us-east-2
-        # r5.4xlarge     16      128       0.35       0.20
-        # r5.12xlarge    48      384       1.00       0.60
-        # r5.24xlarge    96      768       1.90       1.10
         aws.region_config REGION do |region|
             region.spot_instance = true
-            if REGION == "us-east-1"
-                region.spot_max_price = "1.90"
-            else
-                region.spot_max_price = "1.10"
-            end
+            region.spot_max_price = BID_PRICE
         end
     end
 
@@ -145,14 +148,26 @@ Vagrant.configure("2") do |config|
         tree /work
     SHELL
 
-    config.vm.provision "shell", privileged: false, name: "docker run r-inde", inline: <<-SHELL
+    config.vm.provision "shell", privileged: false, name: "docker run r-index", inline: <<-SHELL
         echo "==Vagrantfile== Running r-index"
         mkdir -p /work/output
+        top -b -d 5 > /output/top.log &
+        top_pid = $!
+        iostat -dmx 5 > /output/iostat.log &
+        iostat_pid = $!
+        while true ; do echo "=== /output/all_asm.fa.err ===" ; cat /output/all_asm.fa.err ; sleep 30 ; done &
+        log1_pid = $!
+        while true ; do echo "=== /fasta/all_asm.fa.log ===" ; cat /fasta/all_asm.fa.log ; sleep 30 ; done &
+        log2_pid = $!
         sudo docker run \
             -v /work/output:/output \
             -v /work/human_fas:/fasta \
             benlangmead/r-index:latest \
-            bash -c "export PATH=\"\$PATH:/code/Big-BWT\" && /usr/bin/time -v /code/debug/ri-buildfasta -b bigbwt /fasta/all_asm.fa > /output/all_asm.fa.err 2>&1 && mv all_asm.fa.log /output/" && \
+            bash -c "export PATH=\"\$PATH:/code/Big-BWT\" && /usr/bin/time -v /code/debug/ri-buildfasta -b bigbwt /fasta/all_asm.fa > /output/all_asm.fa.err 2>&1 && mv /fasta/all_asm.fa.log /output/" && \
+        wait $top_pid
+        wait $iostat_pid
+        wait $log1_pid
+        wait $log2_pid
         aws s3 sync --quiet /output/ s3://r-index-langmead/results/
     SHELL
 end
