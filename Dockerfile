@@ -6,6 +6,7 @@ RUN apt-get update -y && \
         cmake \
         git \
         python3 \
+        sysstat \
         time \
         zlib1g-dev
 
