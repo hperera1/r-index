@@ -24,10 +24,10 @@ message("Building in ${CMAKE_BUILD_TYPE} mode")
 
 set(CMAKE_CXX_FLAGS "--std=c++17")
 
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -g")
-set(CMAKE_CXX_FLAGS_RELEASE "-g -Ofast -fstrict-aliasing -march=native -DNDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -g -march=ivybridge")
+set(CMAKE_CXX_FLAGS_RELEASE "-g -Ofast -fstrict-aliasing -march=ivybridge -DNDEBUG")
 # set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -fstrict-aliasing -march=native -DNDEBUG -DLF_STATS")  # Uncomment this line in order to enable LF_STATS.
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -ggdb -Ofast -fstrict-aliasing -march=native")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -ggdb -Ofast -fstrict-aliasing -march=ivybridge")
 
 
 #add_custom_command(TARGET sdsl-lite/lib/libsdsl.a
