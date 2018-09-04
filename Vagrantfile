@@ -151,14 +151,14 @@ Vagrant.configure("2") do |config|
     config.vm.provision "shell", privileged: false, name: "docker run r-index", inline: <<-SHELL
         echo "==Vagrantfile== Running r-index"
         mkdir -p /work/output
-        top -b -d 5 > /output/top.log &
-        top_pid = $!
-        iostat -dmx 5 > /output/iostat.log &
-        iostat_pid = $!
-        while true ; do echo "=== /output/all_asm.fa.err ===" ; cat /output/all_asm.fa.err ; sleep 30 ; done &
-        log1_pid = $!
-        while true ; do echo "=== /fasta/all_asm.fa.log ===" ; cat /fasta/all_asm.fa.log ; sleep 30 ; done &
-        log2_pid = $!
+        top -b -d 5 > /work/output/top.log &
+        top_pid=$!
+        iostat -dmx 5 > /work/output/iostat.log &
+        iostat_pid=$!
+        while true ; do echo "=== /work/output/all_asm.fa.err ===" ; cat /work/output/all_asm.fa.err ; sleep 30 ; done &
+        log1_pid=$!
+        while true ; do echo "=== /work/human_fas/all_asm.fa.log ===" ; cat /work/human_fas/all_asm.fa.log ; sleep 30 ; done &
+        log2_pid=$!
         sudo docker run \
             -v /work/output:/output \
             -v /work/human_fas:/fasta \
