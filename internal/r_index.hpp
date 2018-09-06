@@ -112,7 +112,7 @@ public:
         std::string bwt_fname = bigbwt(fname, true, samples_first_vec, samples_last_vec, F);
         std::ifstream ifs(bwt_fname);
         cout << "done.\n(2/3) RLE encoding BWT ... " << flush;
-        bwt = rle_string(ifs); // TODO: is there anyway to prevent opening/reading the file again?
+        bwt = rle_string_t(ifs); // TODO: is there anyway to prevent opening/reading the file again?
         cout << "done. " << endl<<endl;
         r = bwt.number_of_runs();
         assert(samples_first_vec.size() == r);
