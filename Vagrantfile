@@ -84,7 +84,11 @@ Vagrant.configure("2") do |config|
         # 200 (GB) * ($0.1 per GB-month) / 30 (days/month) = $0.66 per day or $0.03 per hour
 
         override.ssh.username = "ec2-user"
-        override.ssh.private_key_path = "~/.aws/r-index.pem"
+        if ACCOUNT == "default"
+            override.ssh.private_key_path = "~/.aws/r-index-default.pem"
+        else
+            override.ssh.private_key_path = "~/.aws/r-index.pem"
+        end
         aws.region_config REGION do |region|
             region.spot_instance = true
             region.spot_max_price = BID_PRICE
@@ -143,7 +147,11 @@ Vagrant.configure("2") do |config|
         fi
     SHELL
 
-    config.vm.provision "file", source: "~/.aws/r-index.pem", destination: "~ec2-user/.ssh/id_rsa"
+    if ACCOUNT == "default"
+        config.vm.provision "file", source: "~/.aws/r-index-default.pem", destination: "~ec2-user/.ssh/id_rsa"
+    else
+        config.vm.provision "file", source: "~/.aws/r-index.pem", destination: "~ec2-user/.ssh/id_rsa"
+    end
     config.vm.provision "file", source: "~/.aws/credentials", destination: "~ec2-user/.aws/credentials"
     config.vm.provision "file", source: "~/.aws/config", destination: "~ec2-user/.aws/config"
 
