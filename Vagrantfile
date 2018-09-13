@@ -11,6 +11,7 @@
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'aws'
 REGION = "us-east-2"
 INSTANCE_TYPE = "r4.8xlarge"
+ACCOUNT = "default"
 
 # TODO: use config file to make it clearer what someone needs to change
 #       to get this working with another AWS account
@@ -24,7 +25,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.provider :aws do |aws, override|
         aws.aws_dir = ENV['HOME'] + "/.aws/"
-        aws.aws_profile = "jhu-langmead"
+        aws.aws_profile = ACCOUNT
         aws.region = REGION
         aws.tags = { 'Application' => 'r-index' }
         aws.keypair_name = "r-index"
@@ -36,8 +37,13 @@ Vagrant.configure("2") do |config|
         end
         if REGION == "us-east-2"
             aws.ami = "ami-0b59bfac6be064b78"
-            aws.subnet_id = "subnet-03dc5fea763057c7d"
-            aws.security_groups = ["sg-0a01b0edfa261cb34"]  # allows just 22
+            if ACCOUNT == "default"
+                aws.subnet_id = "subnet-09923c0ca7212a423"
+                aws.security_groups = ["sg-051ff8479e318f0ab"]  # allows just 22
+            else
+                aws.subnet_id = "subnet-03dc5fea763057c7d"
+                aws.security_groups = ["sg-0a01b0edfa261cb34"]  # allows just 22
+            end
         end
         aws.associate_public_ip = true
         #
