@@ -9,15 +9,11 @@
 # Note: the standard vagrant-aws plugin does not have spot support
 
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'aws'
-# REGION = "us-east-1"
 REGION = "us-east-2"
 INSTANCE_TYPE = "r4.8xlarge"
 
-# Good bids:
-#              vCPU  GiB mem  us-east-1  us-east-2
-# r5.4xlarge     16      128       0.35       0.20
-# r5.12xlarge    48      384       1.00       0.60
-# r5.24xlarge    96      768       1.90       1.10
+# TODO: use config file to make it clearer what someone needs to change
+#       to get this working with another AWS account
 
 BID_PRICE = "0.40"
 
@@ -27,6 +23,8 @@ Vagrant.configure("2") do |config|
     config.vm.synced_folder ".", "/vagrant", disabled: true
 
     config.vm.provider :aws do |aws, override|
+        aws.aws_dir = ENV['HOME'] + "/.aws/"
+        aws.aws_profile = "jhu-langmead"
         aws.region = REGION
         aws.tags = { 'Application' => 'r-index' }
         aws.keypair_name = "r-index"
@@ -74,7 +72,7 @@ Vagrant.configure("2") do |config|
             'Ebs.VolumeType' => 'gp2'
         }]
         # 200 (GB) * ($0.1 per GB-month) / 30 (days/month) = $0.66 per day or $0.03 per hour
-        
+
         override.ssh.username = "ec2-user"
         override.ssh.private_key_path = "~/.aws/r-index.pem"
         aws.region_config REGION do |region|
@@ -95,7 +93,7 @@ Vagrant.configure("2") do |config|
             echo "Listing blocks:"
             lsblk
             # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/raid-config.html
-            
+
             echo "do RAID0 build"
             if [ ! -e "/dev/xvdf" ] ; then
                 if [ ! -e "/dev/sdf" ] ; then
@@ -118,16 +116,16 @@ Vagrant.configure("2") do |config|
             sleep 10
             cat /proc/mdstat
             sudo mdadm --detail /dev/md0
-            
+
             echo "mkfs RAID0"
             mkfs -q -t ext4 -L MY_RAID /dev/md0
-            
+
             echo "ensure RAID0 is reassembled automatically on boot"
             sudo mdadm --detail --scan | sudo tee -a /etc/mdadm.conf
-            
+
             echo "Create ramdisk image to preload the block device modules"
             sudo dracut -H -f /boot/initramfs-$(uname -r).img $(uname -r)
-            
+
             echo "Mount RAID0"
             mkdir /work
             mount LABEL=MY_RAID ${DRIVE} /work/
@@ -141,9 +139,11 @@ Vagrant.configure("2") do |config|
 
     config.vm.provision "shell", privileged: false, name: "download inputs", inline: <<-SHELL
         mkdir -p /work/human_fas
-        aws s3 cp --quiet s3://r-index-langmead/human_fas/all_asm.fa.zst /work/human_fas/all_asm.fa.zst
-        zstd -d /work/human_fas/all_asm.fa.zst -o /work/human_fas/all_asm.fa
-        rm -f /work/human_fas/all_asm.fa.zst
+        for i in 1 2 3 4 5 6 ; do
+            aws s3 cp --quiet s3://r-index-langmead/human_fas/asm_${i}.txt.zst /work/human_fas/asm_${i}.txt.zst
+            zstd -d /work/human_fas/asm_${i}.txt.zst -o /work/human_fas/asm_${i}.txt
+            rm -f /work/human_fas/asm_${i}.txt.zst
+        done
         echo "Tree:"
         tree /work
     SHELL
@@ -151,23 +151,32 @@ Vagrant.configure("2") do |config|
     config.vm.provision "shell", privileged: false, name: "docker run r-index", inline: <<-SHELL
         echo "==Vagrantfile== Running r-index"
         mkdir -p /work/output
-        top -b -d 5 > /work/output/top.log &
-        top_pid=$!
-        iostat -dmx 5 > /work/output/iostat.log &
-        iostat_pid=$!
-        while true ; do echo ; echo "=== *** === /work/output/all_asm.fa.err === *** ===" ; cat /work/output/all_asm.fa.err ; sleep 30 ; done &
-        log1_pid=$!
-        while true ; do echo ; echo "=== *** === /work/human_fas/all_asm.fa.log === *** ===" ; cat /work/human_fas/all_asm.fa.log ; sleep 30 ; done &
-        log2_pid=$!
-        sudo docker run \
-            -v /work/output:/output \
-            -v /work/human_fas:/fasta \
-            benlangmead/r-index:latest \
-            bash -c "export PATH=\"\$PATH:/code/Big-BWT\" && /usr/bin/time -v /code/debug/ri-buildfasta -b bigbwt /fasta/all_asm.fa > /output/all_asm.fa.err 2>&1 && mv /fasta/all_asm.fa.log /output/" && \
-        wait $top_pid
-        wait $iostat_pid
-        wait $log1_pid
-        wait $log2_pid
-        aws s3 sync --quiet /output/ s3://r-index-langmead/results/
+        for i in 1 2 3 4 5 6 ; do
+            top -b -d 5 > /work/output/top_${i}.log &
+            top_pid=$!
+            iostat -dmx 5 > /work/output/iostat_{$i}.log &
+            iostat_pid=$!
+            while true ; do echo ; echo "=== *** === /work/output/asm_${i}.txt.err === *** ===" ; cat /work/output/asm_${i}.txt.err ; sleep 30 ; done &
+            log1_pid=$!
+            while true ; do echo ; echo "=== *** === /work/human_fas/asm_${i}.txt.log === *** ===" ; cat /work/human_fas/asm_${i}.txt.log ; sleep 30 ; done &
+            log2_pid=$!
+            sudo docker run \
+                -v /work/output:/output \
+                -v /work/human_fas:/fasta \
+                benlangmead/r-index:latest \
+                bash -c "export PATH=\"\$PATH:/code/Big-BWT\" && /usr/bin/time -v /code/debug/ri-buildfasta -b bigbwt /fasta/asm_${i}.txt > /output/asm_${i}.txt.err 2>&1 && mv /fasta/asm_${i}.txt.log /output/" && \
+            sleep 1
+            kill $iostat_pid
+            kill $log1_pid
+            kill $log2_pid
+            kill $top_pid
+            sleep 1
+            wait $top_pid
+            wait $iostat_pid
+            wait $log1_pid
+            wait $log2_pid
+            aws s3 sync --quiet /output/ s3://r-index-langmead/results/
+            rm -f /output/*
+        done
     SHELL
 end
