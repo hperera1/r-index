@@ -28,8 +28,13 @@ Vagrant.configure("2") do |config|
         aws.aws_profile = ACCOUNT
         aws.region = REGION
         aws.tags = { 'Application' => 'r-index' }
-        aws.keypair_name = "r-index"
         aws.instance_type = INSTANCE_TYPE
+        aws.associate_public_ip = true
+        if ACCOUNT == "default"
+            aws.keypair_name = "r-index-default"
+        else
+            aws.keypair_name = "r-index"
+        end
         if REGION == "us-east-1"
             aws.ami = "ami-0ff8a91507f77f867"
             aws.subnet_id = "subnet-1fc8de7a"
@@ -45,7 +50,6 @@ Vagrant.configure("2") do |config|
                 aws.security_groups = ["sg-0a01b0edfa261cb34"]  # allows just 22
             end
         end
-        aws.associate_public_ip = true
         #
         # If you change the number of volumes, you must also change mdadm commands below
         #
