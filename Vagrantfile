@@ -158,7 +158,7 @@ Vagrant.configure("2") do |config|
     config.vm.provision "shell", privileged: false, name: "download inputs", inline: <<-SHELL
         mkdir -p /work/human_fas
         for i in 1 2 3 4 5 6 ; do
-            aws s3 cp --quiet s3://r-index-east-2/human_fas/asm_${i}.txt.zst /work/human_fas/asm_${i}.txt.zst
+            aws s3 cp --quiet s3://r-index-langmead/human_fas/asm_${i}.txt.zst /work/human_fas/asm_${i}.txt.zst
             zstd -d /work/human_fas/asm_${i}.txt.zst -o /work/human_fas/asm_${i}.txt
             rm -f /work/human_fas/asm_${i}.txt.zst
         done
@@ -193,7 +193,7 @@ Vagrant.configure("2") do |config|
             wait $iostat_pid
             wait $log1_pid
             wait $log2_pid
-            aws s3 sync --quiet /output/ s3://r-index-east-2/results/
+            aws s3 sync --quiet /output/ s3://r-index-langmead/results/
             rm -f /output/*
         done
     SHELL
