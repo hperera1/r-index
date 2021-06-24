@@ -36,12 +36,12 @@ public:
      */
     r_index(){} // empty constructor. Should call one of init_sais, init_bigbwt, or init_frombwt
     r_index(std::string fname, std::string method="bigbwt", uint32_t nthreads=1) {
-        if (method == "bigbwt") { 
+        if (method == "bigbwt") {
             init_bigbwt(fname, nthreads);
         }
     }
 
-    void init_sais(std::string& input, bool sais = true) { 
+    void init_sais(std::string& input, bool sais = true) {
         this->sais = sais;
         if(contains_reserved_chars(input)){
             cout << "Error: input string contains one of the reserved characters 0x0, 0x1" << endl;
@@ -104,7 +104,7 @@ public:
             pred_to_run[i] = samples_first_vec[i].second;
         }
         cout << " done. " << endl<<endl;
-    
+
     }
 
 
@@ -212,10 +212,10 @@ public:
                 ulint j = bwt.select(rnk, c);
                 ulint run_of_j = bwt.run_of_position(j);
                 k1 = samples_last[run_of_j];
-            } 
+            }
         } else {
             return {{1,0},0};
-        } 
+        }
         return {range1, k1};
     }
 
@@ -444,7 +444,9 @@ public:
      */
     void load_from_file(string path){
         std::ifstream in(path);
+        cout << "do we get here part 2" << endl;
         load(in);
+        cout << "do we get here part 3" << endl;
         in.close();
     }
 
@@ -493,7 +495,7 @@ protected:
             range1 = LF(range,c);
             next_good = ((i == m-1) ? 1 : (bwt[range1.second] == P[m-i-2]));
             if(range1.first <= range1.second) {
-                if(cur_good) { 
+                if(cur_good) {
                     // last c is at the end of range. Then, we have this sample by induction!
                     assert(k>0);
                     k--;
@@ -616,7 +618,7 @@ protected:
                 terminator_position = i;
         return F;
     }
-    
+
     vector<ulint> build_F(std::ifstream& ifs) {
         ifs.clear();
         ifs.seekg(0);

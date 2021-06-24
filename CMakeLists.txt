@@ -21,12 +21,12 @@ FetchContent_Declare(
   bigbwt
   GIT_REPOSITORY https://github.com/alshai/Big-BWT.git
   )
-  
+
 FetchContent_GetProperties(bigbwt)
 if(NOT bigbwt_POPULATED)
   FetchContent_Populate(bigbwt)
   add_subdirectory(${bigbwt_SOURCE_DIR} ${bigbwt_BINARY_DIR})
-    
+
   endif()
 
 # check for SDSL
@@ -45,7 +45,7 @@ if (NOT SDSL_LIB)
       FetchContent_Populate(sdsl)
 
       set(GENERATE_DOC OFF CACHE BOOL "Do not generate doxygen for sdsl-lite")
-      
+
       add_subdirectory(${sdsl_SOURCE_DIR} ${sdsl_BINARY_DIR} EXCLUDE_FROM_ALL)
     endif()
 
@@ -86,7 +86,7 @@ FetchContent_Declare(
 FetchContent_GetProperties(klib)
 if(NOT klib_POPULATED)
   FetchContent_Populate(klib)
-  
+
   # add_subdirectory(${klib_SOURCE_DIR} ${klib_BINARY_DIR} EXCLUDE_FROM_ALL)
   add_library(klib INTERFACE)
 
@@ -125,6 +125,13 @@ add_executable(ri-space EXCLUDE_FROM_ALL ri-space.cpp)
 TARGET_LINK_LIBRARIES(ri-space sdsl)
 TARGET_LINK_LIBRARIES(ri-space divsufsort)
 TARGET_LINK_LIBRARIES(ri-space divsufsort64)
+
+add_executable(ri-query ri-query.cpp)
+TARGET_LINK_LIBRARIES(ri-query sdsl)
+TARGET_LINK_LIBRARIES(ri-query divsufsort)
+TARGET_LINK_LIBRARIES(ri-query divsufsort64)
+TARGET_LINK_LIBRARIES(ri-query z)
+TARGET_LINK_LIBRARIES(ri-query klib)
 
 add_executable(ri-buildfasta ri-buildfasta.cpp)
 TARGET_LINK_LIBRARIES(ri-buildfasta sdsl)
