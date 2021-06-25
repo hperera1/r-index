@@ -125,6 +125,8 @@ add_executable(ri-space EXCLUDE_FROM_ALL ri-space.cpp)
 TARGET_LINK_LIBRARIES(ri-space sdsl)
 TARGET_LINK_LIBRARIES(ri-space divsufsort)
 TARGET_LINK_LIBRARIES(ri-space divsufsort64)
+TARGET_LINK_LIBRARIES(ri-space z)
+TARGET_LINK_LIBRARIES(ri-space klib)
 
 add_executable(ri-query ri-query.cpp)
 TARGET_LINK_LIBRARIES(ri-query sdsl)

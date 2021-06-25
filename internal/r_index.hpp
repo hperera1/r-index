@@ -443,10 +443,13 @@ public:
      * \param path: full file name
      */
     void load_from_file(string path){
+        bool fast;
         std::ifstream in(path);
-        cout << "do we get here part 2" << endl;
+        if (!in.good()) {
+           cout << "file not good" << endl;
+        }
+        in.read((char*)&fast,sizeof(fast));
         load(in);
-        cout << "do we get here part 3" << endl;
         in.close();
     }
 
