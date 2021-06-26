@@ -93,7 +93,7 @@ void SA_all(string esaFilename, r_index<> idx) {
   // here we find out how long it takes to query all the samples being asked for.
   cout << "\nperforming all queries:" << endl;
   auto t1 = std::chrono::high_resolution_clock::now();
-  for (size_t i = 1; i <= r; z++) {
+  for (size_t i = 1; i <= r; i++) {
     run = rleBwt.run_of_position(i);
     j = rleBwt.run_range(run).second;
     ulint phiVal = esa[run];
