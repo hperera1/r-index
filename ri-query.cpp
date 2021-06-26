@@ -13,7 +13,7 @@ using namespace std;
 
 bool hyb=false;
 
-// do we need the esa file? 
+// do we need the esa file?
 void help() {
   cout << "ri-query: RA to SA using phi" << endl;
   cout << "Usage:       ri-query <index> <end samples> <# of queries>" << endl;
@@ -43,7 +43,7 @@ vector<ulint>& get_esa(std::string fname, ulint n, vector<ulint> &esa) {
 }
 
 void SA(std::set<ulint> &samples, string esaFilename, r_index<> idx) {
-  string bwt = idx.get_bwt(); // see if theres a way to avoid this. because if there is you didnt see it.
+  string bwt = idx.get_bwt(); // see if theres a way to avoid this. because if there is I didnt see it.
   rle_string rleBwt = rle_string(bwt); // same with this.
   ulint n = rleBwt.size();
   ulint r = idx.number_of_runs();
@@ -93,11 +93,17 @@ void SA_all(string esaFilename, r_index<> idx) {
   // here we find out how long it takes to query all the samples being asked for.
   cout << "\nperforming all queries:" << endl;
   auto t1 = std::chrono::high_resolution_clock::now();
+  for (std::set<ulint>::iterator iter = samples.begin(); iter != samples.end(); iter++) {
+    ulint i = *iter;
+    run = rleBwt.run_of_position(i);
+    j = rleBwt.run_range(run).second;
+    ulint phiVal = esa[run];
 
-  for (size_t z = 1; z <= n; z++)
-    idx.Phi(z);
+    for (size_t z = 1; z <= r; z++)
+      phiVal = idx.Phi(phiVal);
 
-  //cout << "i: " << i << ", run: " << run << ", j: " << j << ", phiVal: " << phiVal << endl;
+    //cout << "i: " << i << ", run: " << run << ", j: " << j << ", phiVal: " << phiVal << endl;
+  }
   auto t2 = std::chrono::high_resolution_clock::now();
   ulint total1 = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>(t2 - t1).count();
   ulint total2 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
