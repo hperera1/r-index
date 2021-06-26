@@ -57,8 +57,8 @@ void SA(std::set<ulint> &samples, string esaFilename, r_index<> idx) {
   // here we find out how long it takes to query all the samples being asked for.
   cout << "\nperforming " << samples.size() << " queries:" << endl;
   auto t1 = std::chrono::high_resolution_clock::now();
-  for (std::set<ulint>::iterator iter = samples.begin(); iter != samples.end(); iter++) {
-    ulint i = *iter;
+  for (std::set<ulint>::iterator sIter = samples.begin(); sIter != samples.end(); sIter++) {
+    ulint i = *sIter;
     run = rleBwt.run_of_position(i);
     j = rleBwt.run_range(run).second;
     ulint phiVal = esa[run];
@@ -93,13 +93,12 @@ void SA_all(string esaFilename, r_index<> idx) {
   // here we find out how long it takes to query all the samples being asked for.
   cout << "\nperforming all queries:" << endl;
   auto t1 = std::chrono::high_resolution_clock::now();
-  for (std::set<ulint>::iterator iter = samples.begin(); iter != samples.end(); iter++) {
-    ulint i = *iter;
+  for (size_t i = 1; i <= r; z++) {
     run = rleBwt.run_of_position(i);
     j = rleBwt.run_range(run).second;
     ulint phiVal = esa[run];
 
-    for (size_t z = 1; z <= r; z++)
+    for (size_t iter = 0; iter < (j-i); iter++)
       phiVal = idx.Phi(phiVal);
 
     //cout << "i: " << i << ", run: " << run << ", j: " << j << ", phiVal: " << phiVal << endl;
