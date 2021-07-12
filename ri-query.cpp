@@ -13,7 +13,6 @@ using namespace std;
 
 bool hyb=false;
 
-// do we need the esa file?
 void help() {
   cout << "ri-query: RA to SA using phi" << endl;
   cout << "Usage:       ri-query <index> <end samples> <# of queries>" << endl;
@@ -42,29 +41,29 @@ vector<ulint>& get_esa(std::string fname, ulint n, vector<ulint> &esa) {
     return esa;
 }
 
+// queries every generated sample.
 void SA(std::set<ulint> &samples, string esaFilename, r_index<> idx) {
-  string bwt = idx.get_bwt(); // see if theres a way to avoid this. because if there is I didnt see it.
-  rle_string rleBwt = rle_string(bwt); // same with this.
+  string bwt = idx.get_bwt();          // ? these calls take quite a while ?
+  rle_string rleBwt = rle_string(bwt); // ? are these two calls avoidable ?
   ulint n = rleBwt.size();
   ulint r = idx.number_of_runs();
   ulint j;
   ulint run;
-
   std::vector<ulint> esa;
   get_esa(esaFilename, n, esa);
   r = esa.size();
 
-  // here we find out how long it takes to query all the samples being asked for.
+  // beginning of querying all the samples.
   cout << "\nperforming " << samples.size() << " queries:" << endl;
   auto t1 = std::chrono::high_resolution_clock::now();
   for (std::set<ulint>::iterator sIter = samples.begin(); sIter != samples.end(); sIter++) {
-    ulint i = *sIter;
-    run = rleBwt.run_of_position(i);
-    j = rleBwt.run_range(run).second;
-    ulint phiVal = esa[run];
+    ulint i = *sIter; // sample.
+    run = rleBwt.run_of_position(i); // run sample belongs to.
+    j = rleBwt.run_range(run).second; // size of run.
+    ulint phiVal = esa[run]; // sa value.
 
     for (size_t iter = 0; iter < (j-i); iter++)
-       phiVal = idx.Phi(phiVal);
+       phiVal = idx.Phi(phiVal); // iterate backwards j-i times to find value of i.
 
     //cout << "i: " << i << ", run: " << run << ", j: " << j << ", phiVal: " << phiVal << endl;
   }
@@ -78,6 +77,7 @@ void SA(std::set<ulint> &samples, string esaFilename, r_index<> idx) {
   cout << "n/r: " << (static_cast<float>(n)/static_cast<float>(r)) << endl;
 }
 
+// queries the entire r-index.
 void SA_all(string esaFilename, r_index<> idx) {
   string bwt = idx.get_bwt();
   rle_string rleBwt = rle_string(bwt);
@@ -113,11 +113,13 @@ void SA_all(string esaFilename, r_index<> idx) {
   cout << "n/r: " << (static_cast<float>(n)/static_cast<float>(r)) << endl;
 }
 
+// generates however many samples we are looking to query.
 template<typename ri_t>
 void generateSamples(std::set<ulint> &samples, ulint amount, ri_t idx) {
   cout << "generating samples:" << endl;
   ulint min = 1;
   ulint max = idx.number_of_runs() - 1;
+  //ulint max = idx.bwt_size() - 1;
   cout << "min: " << min << ", max: " << max << ", amount: " << amount << endl;
 
   ulint seed = 2706265417;
@@ -129,6 +131,7 @@ void generateSamples(std::set<ulint> &samples, ulint amount, ri_t idx) {
   cout << "done." << endl;
 }
 
+// filename: r-index | esaFilename: end samples | numSamples: how many we want to query
 template<typename ri_t>
 void run(string filename, string esaFilename, ulint numSamples) {
   ri_t idx;
@@ -136,7 +139,7 @@ void run(string filename, string esaFilename, ulint numSamples) {
   std::set<ulint> querySamples;
   generateSamples(querySamples, numSamples, idx);
 
-  if(numSamples == 0)
+  if(numSamples == 0) // 0 means we query the whole index.
     SA_all(esaFilename, idx);
   else {
     SA(querySamples, esaFilename, idx);
@@ -150,9 +153,11 @@ int main(int argc, char** argv) {
   while(ptr<argc-1)
     parse_args(argv, argc, ptr);
 
+  // the issue with using a templated run in order to work with a hybrid r-index
+  // is that they didn't have the same functions.
   // if(hyb)
   //   run<r_index<sparse_hyb_vector,rle_string_hyb>>(argv[1], argv[2],atoi(argv[3]));
   // else
 
-  run<r_index<>>(argv[1], argv[2],atoi(argv[3]));
+  run<r_index<>>(argv[1], argv[2], atoi(argv[3]));
 }
