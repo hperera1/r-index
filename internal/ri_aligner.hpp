@@ -236,7 +236,7 @@ namespace ri {
             */
 
             // report locations of the string P within the reference.
-            //  use a lambda function to capture ouput (vector<ulint>) 
+            //  use a lambda function to capture ouput (vector<ulint>)
             //  F(string, vector<ulint>)
             //  if no locations are found, then locs vector will be empty
             /*
@@ -280,7 +280,7 @@ namespace ri {
                 uint64_t prev_pos = 0;
                 for (auto i = 0; i < seq_names.size() - 1; ++i) {
                     auto x = seq_sel(i + 2);
-                    lengths.push_back(std::make_pair(seq_names[i], x - prev_pos)); 
+                    lengths.push_back(std::make_pair(seq_names[i], x - prev_pos));
                     prev_pos = x;
                 }
                 lengths.push_back(std::make_pair(seq_names[seq_names.size()-1], fwd.text_size() - prev_pos));
@@ -376,7 +376,7 @@ namespace ri {
                         f(P, range, (m-i-1)+1, end ,locs);
                         // reset range, k, end
                         range = fwd.full_range();
-                        k = fwd.get_last_run_sample(); 
+                        k = fwd.get_last_run_sample();
                         end=m-i-1;
                     } else {
                         range = range1;

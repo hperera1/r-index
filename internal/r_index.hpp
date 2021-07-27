@@ -13,6 +13,7 @@
 
 #include <definitions.hpp>
 #include <rle_string.hpp>
+#include <ri_rasa.hpp>
 #include "sparse_sd_vector.hpp"
 #include "sparse_hyb_vector.hpp"
 #include "utils.hpp"
@@ -104,9 +105,7 @@ public:
             pred_to_run[i] = samples_first_vec[i].second;
         }
         cout << " done. " << endl<<endl;
-
     }
-
 
     /* use big-bwt to create r-index
      * IMPORTANT: takes input FILE NAME, NOT the input string itself!
@@ -142,6 +141,8 @@ public:
         cout << "(3/3) Building phi function ..." << flush;
         build_phi(samples_first_vec, samples_last_vec); //
         cout << " done. " << endl<<endl;
+
+
     }
 
     void from_bwt(std::string fname) {
@@ -165,6 +166,9 @@ public:
         cout << "(3/3) Building phi function ..." << flush;
         build_phi(samples_first_vec, samples_last_vec); //
         cout << " done. " << endl<<endl;
+
+        rads test = rads(samples_first_vec, samples_last_vec);
+        test.list_paths();
     }
 
     /*
@@ -315,7 +319,6 @@ public:
      *
      * }
      */
-
     vector<ulint>& locate_range(const ulint L, const ulint R, const ulint k, ulint max_hits, vector<ulint>& OCC) {
         ulint n_occ = R>=L ? (R-L)+1 : 0;
         if (n_occ > max_hits) n_occ = max_hits;
