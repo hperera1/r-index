@@ -93,9 +93,8 @@ public:
     }
   }
 
-  // find and removes cycles
-  void find_cycles(std::vector<vector<int>> &paths) {
-    std::unordered_set<int> cycles; // this tells us which index a cycle was on
+  // find, break cycles, and mark which set used to be part of a cycle
+  void find_cycles() {
     for(int i = 0; i < paths.size(); i++) {
       std::unordered_set<int> curr_visited;
       for(int j = 0; j < paths[i].size(); j++) {
@@ -118,7 +117,11 @@ public:
     return paths.size();
   }
 
+  int get_num_cycles() {
+    return cycles.size();
+  }
 protected:
+  std::unordered_set<int> cycles;
   std::unordered_map<ulint, ulint> esa_map;
   std::unordered_map<ulint, ulint> pis_inv;
   std::vector<ulint> phi_inv_sa;

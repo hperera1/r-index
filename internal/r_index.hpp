@@ -167,8 +167,13 @@ public:
         build_phi(samples_first_vec, samples_last_vec); //
         cout << " done. " << endl<<endl;
 
+        cout << "Constructing rads." << endl;
         rads test = rads(samples_first_vec, samples_last_vec);
+        cout << "Done. Now listing paths." << endl;
         test.list_paths();
+        cout << "Done. Now finding cycles." << endl;
+        test.find_cycles();
+        cout << "cycles count: " << test.get_num_cycles() << endl;
     }
 
     /*
