@@ -138,11 +138,20 @@ public:
         assert(samples_first_vec.size() == r);
         assert(samples_last_vec.size() == r);
         cout << "done. " << endl<<endl;
+
+        cout << "(2.5/3) Constructing rads ..." << endl;
+        rads test = rads(samples_first_vec, samples_last_vec);
+        cout << "Done. Now listing paths." << endl;
+        test.list_paths();
+        cout << "Done. Now finding cycles." << endl;
+        test.find_cycles();
+        cout << "phi_inv_sa size: " << test.get_size() << endl;
+        cout << "paths count: " << test.get_num_paths() << endl;
+        cout << "cycles count: " << test.get_num_cycles() << endl<<endl;
+
         cout << "(3/3) Building phi function ..." << flush;
         build_phi(samples_first_vec, samples_last_vec); //
         cout << " done. " << endl<<endl;
-
-
     }
 
     void from_bwt(std::string fname) {
@@ -155,6 +164,7 @@ public:
         bwt = rle_string_t(ifs); // TODO: is there anyway to prevent opening/reading the file again?
         cout << "done. " << endl<<endl;
         r = bwt.number_of_runs();
+        cout << bwt.size() << endl;
         assert(samples_first_vec.size() == r);
         assert(samples_last_vec.size() == r);
         int log_r = bitsize(uint64_t(r));
@@ -163,17 +173,20 @@ public:
         cout << "Rate n/r = " << double(bwt.size())/r << endl;
         cout << "log2(r) = " << log2(double(r)) << endl;
         cout << "log2(n/r) = " << log2(double(bwt.size())/r) << endl << endl;
-        cout << "(3/3) Building phi function ..." << flush;
-        build_phi(samples_first_vec, samples_last_vec); //
-        cout << " done. " << endl<<endl;
 
-        cout << "Constructing rads." << endl;
+        cout << "(2.5/3) Constructing rads ..." << endl;
         rads test = rads(samples_first_vec, samples_last_vec);
         cout << "Done. Now listing paths." << endl;
         test.list_paths();
         cout << "Done. Now finding cycles." << endl;
         test.find_cycles();
-        cout << "cycles count: " << test.get_num_cycles() << endl;
+        cout << "phi_inv_sa size: " << test.get_size() << endl;
+        cout << "paths count: " << test.get_num_paths() << endl;
+        cout << "cycles count: " << test.get_num_cycles() << endl<<endl;
+
+        cout << "(3/3) Building phi function ..." << flush;
+        build_phi(samples_first_vec, samples_last_vec); //
+        cout << " done. " << endl<<endl;
     }
 
     /*

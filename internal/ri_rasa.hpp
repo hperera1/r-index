@@ -34,9 +34,12 @@ public:
     phi_inv_sa.resize(esa.size());
     for(ulint i = 0; i < esa.size(); i++) {
       esa_map[esa[i]] = i;
-      phi_inv_sa[i] = ssa[i].second;
-      pis_inv[ssa[i].second] = i;
+      if(i < ssa.size() - 1) {
+        phi_inv_sa[i] = ssa[i+1].first;
+        pis_inv[ssa[i+1].first] = i;
+      }
     }
+
     std::sort(ssa.begin(), ssa.end());
     std::sort(esa.begin(), esa.end());
     esa.push_back(esa.back() + 1);
@@ -44,8 +47,8 @@ public:
     ulint j = 0;
     ulint node = esa_map[esa.back()];
     while(i < ssa.size()) {
-      while((i < ssa.size()) && (j < esa.size()) && (ssa[i].second < esa[j])) {
-        phi_inv_sa[pis_inv[ssa[i].second]] = node;
+      while((i < ssa.size()) && (j < esa.size()) && (ssa[i].first < esa[j])) {
+        phi_inv_sa[pis_inv[ssa[i].first]] = node;
         i += 1;
       }
 
@@ -66,7 +69,7 @@ public:
         indegrees[phi_inv_sa[i]] += 1;
     }
 
-    for(int i = 0; i < indegrees.size(); i++) {
+    for(int i = 0; i < phi_inv_sa.size(); i++) {
       if(indegrees[i] == 0)
         sources.push(i);
     }
@@ -85,6 +88,8 @@ public:
         v = phi_inv_sa[v];
       }
 
+      currentPath.push_back(v);
+
       if(v >= 0 && (visited[v] == false)) {
         sources.push(v);
       }
@@ -97,7 +102,7 @@ public:
   void find_cycles() {
     for(int i = 0; i < paths.size(); i++) {
       std::unordered_set<int> curr_visited;
-      for(int j = 0; j < paths[i].size(); j++) {
+      for(int j = 0; j < paths[i].  size(); j++) {
         int u = paths[i][j];
         if(curr_visited.find(u) == curr_visited.end()) // if not found
           curr_visited.insert(u);
@@ -120,8 +125,9 @@ public:
   int get_num_cycles() {
     return cycles.size();
   }
+
 protected:
-  std::unordered_set<int> cycles;
+  std::unordered_set<int> cycles; // tells us which 'i' of paths is a cycle
   std::unordered_map<ulint, ulint> esa_map;
   std::unordered_map<ulint, ulint> pis_inv;
   std::vector<ulint> phi_inv_sa;
