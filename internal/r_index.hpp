@@ -142,12 +142,9 @@ public:
         cout << "(2.5/3) Constructing rads ..." << endl;
         rads test = rads(samples_first_vec, samples_last_vec);
         cout << "Done. Now listing paths." << endl;
-        test.list_paths();
-        cout << "Done. Now finding cycles." << endl;
-        test.find_cycles();
+        test.list_paths(samples_first_vec, samples_last_vec);
         cout << "phi_inv_sa size: " << test.get_size() << endl;
         cout << "paths count: " << test.get_num_paths() << endl;
-        cout << "cycles count: " << test.get_num_cycles() << endl<<endl;
 
         cout << "(3/3) Building phi function ..." << flush;
         build_phi(samples_first_vec, samples_last_vec); //
@@ -177,12 +174,10 @@ public:
         cout << "(2.5/3) Constructing rads ..." << endl;
         rads test = rads(samples_first_vec, samples_last_vec);
         cout << "Done. Now listing paths." << endl;
-        test.list_paths();
-        cout << "Done. Now finding cycles." << endl;
-        test.find_cycles();
+        test.list_paths(samples_first_vec, samples_last_vec);
         cout << "phi_inv_sa size: " << test.get_size() << endl;
         cout << "paths count: " << test.get_num_paths() << endl;
-        cout << "cycles count: " << test.get_num_cycles() << endl<<endl;
+        cout << "avg path length: " << test.get_avg_path_l() << endl<<endl;
 
         cout << "(3/3) Building phi function ..." << flush;
         build_phi(samples_first_vec, samples_last_vec); //
