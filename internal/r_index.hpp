@@ -141,8 +141,6 @@ public:
 
         cout << "(2.5/3) Constructing rads ..." << endl;
         rads test = rads(samples_first_vec, samples_last_vec);
-        cout << "Done. Now listing paths." << endl;
-        test.list_paths(samples_first_vec, samples_last_vec);
         cout << "phi_inv_sa size: " << test.get_size() << endl;
         cout << "paths count: " << test.get_num_paths() << endl;
 
@@ -161,7 +159,6 @@ public:
         bwt = rle_string_t(ifs); // TODO: is there anyway to prevent opening/reading the file again?
         cout << "done. " << endl<<endl;
         r = bwt.number_of_runs();
-        cout << bwt.size() << endl;
         assert(samples_first_vec.size() == r);
         assert(samples_last_vec.size() == r);
         int log_r = bitsize(uint64_t(r));
@@ -173,14 +170,11 @@ public:
 
         cout << "(2.5/3) Constructing rads ..." << endl;
         rads test = rads(samples_first_vec, samples_last_vec);
-        cout << "Done. Now listing paths." << endl;
-        test.list_paths(samples_first_vec, samples_last_vec);
         cout << "phi_inv_sa size: " << test.get_size() << endl;
-        cout << "paths count: " << test.get_num_paths() << endl;
-        cout << "avg path length: " << test.get_avg_path_l() << endl<<endl;
+        cout << "paths count: " << test.get_num_paths() << endl<<endl;
 
         cout << "(3/3) Building phi function ..." << flush;
-        build_phi(samples_first_vec, samples_last_vec); //
+        build_phi(samples_first_vec, samples_last_vec);
         cout << " done. " << endl<<endl;
     }
 

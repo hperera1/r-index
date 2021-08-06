@@ -13,29 +13,25 @@ using namespace sdsl;
 namespace ri {
 class rads {
 public:
+  /*
+   * get comments in on everything
+   * with comments you get the pseudocode written, the paper written!
+   * easier to revisit
+   */
+
   rads(){};
   rads(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
     init_by_value(ssa, esa);
+    cout << "Done. Now listing paths." << endl;
+    list_paths(ssa, esa);
   }
-
-  /* rads(r_index &ridx) {
-   *   init_by_reference(ridx);
-   * }
-   *
-   * void init_by_reference(r_index &ridx) {
-   *   end_map.reserve(ridx.samples_last.size());
-   *   phi_inv_sa.resize(ridx.samples_last.size());
-   *   for(ulint i = 0; i < ridx.samples_last.size(); i++) {
-   *     esa_map[ridx.samples_last[i]] = i;
-   *   }
-   * }
-   */
 
   void init_by_value(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
     assert(ssa.size() == esa.size());
     esa_map.reserve(esa.size());
-    phi_inv_sa.resize(esa.size()); // becomes adj. list.
+    phi_inv_sa.resize(esa.size());
     bounds.resize(esa.size());
+    trees_sample_bv.resize(esa.size());
 
     // initialization of map variables
     for(ulint i = 0; i < esa.size(); i++) {
@@ -75,12 +71,6 @@ public:
     }
   }
 
-  /*
-   * get comments in on everything
-   * with comments you get the pseudocode written, the paper written!
-   * easier to revisit
-   */
-
   // list_paths() finds all cycles in our graph.
   void list_paths(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
     std::vector<uint> indegrees(phi_inv_sa.size(), 0); // indegrees of the nodes
@@ -114,42 +104,35 @@ public:
             is_cycle = true;
         }
 
-        // min path length; this can be used to store a path that is long enough
-        // if(is_cycle || currentPath.size() >= min_path_length) {
-        // ds with bools that mark whether a node is in a path or not
-        if(is_cycle) {
-          rads_tree branch = rads_tree(current_path);
-          paths.push_back(current_path);
+        // we can implement a min. path length threshold to include paths, that
+        // may not be cycles but can still be used to traverse samples.
+        if(is_cycle) { // if the path is a cycle we construct a tree
+          rads_tree branch = rads_tree(current_path, bounds);
+          trees.push_back(branch);
+          for(size_t i = 0; i < current_path.size(); i++) {
+            trees_sample_bv[current_path[i]] = true; // set the nodes that are in the cycle to true in our bitvector
+          }
         }
       }
     }
   }
 
-  int get_size() {
+  inline int get_size() {
     return phi_inv_sa.size();
   }
 
-  int get_num_paths() {
-    return paths.size();
-  }
-
-  int get_avg_path_l() {
-    int path_length = 0;
-    for (size_t i = 0; i < paths.size(); i++) {
-      path_length += paths[i].size();
-    }
-
-    return (path_length / paths.size());
+  inline int get_num_paths() {
+    return trees.size();
   }
 
 protected:
   std::unordered_map<ulint, ulint> esa_map;
   std::unordered_map<ulint, ulint> pis_inv;
 
-  std::vector<ulint> phi_inv_sa;
-  std::vector<std::pair<ulint,ulint>> bounds;
-  std::vector<vector<uint>> paths;
-  std::vector<rads_tree> trees;
+  std::vector<std::pair<ulint,ulint>> bounds; // lower and upper bounds of each node in the sa graph.
+  std::vector<ulint> phi_inv_sa; // adj. list representing the sa graph.
+  std::vector<rads_tree> trees; // list of cycle trees.
+  std::vector<bool> trees_sample_bv; // bitvector that tells us which samples are in trees.
 };
 }
 
