@@ -26,8 +26,8 @@ void parse_args(char** argv, int argc, int &ptr) {
   assert(ptr<argc);
   string s(argv[ptr]);
   ptr++;
-  if(argc < 4)
-    help();
+  // if(argc < 4)
+  //   help();
 }
 
 vector<ulint>& get_esa(std::string fname, ulint n, vector<ulint> &esa) {
@@ -75,6 +75,42 @@ void SA(std::set<ulint> &samples, string esaFilename, r_index<> idx) {
   cout << "# of runs (r): " << r << endl;
   cout << "n: " << n << endl;
   cout << "n/r: " << (static_cast<float>(n)/static_cast<float>(r)) << endl;
+}
+
+// queries a particular SA[n].
+void SA_n(string esaFilename, r_index<> idx, uint sa_n) {
+  string bwt = idx.get_bwt();
+  rle_string rleBwt = rle_string(bwt);
+  ulint n = rleBwt.size();
+  ulint r = idx.number_of_runs();
+  ulint j;
+  ulint run;
+
+  std::vector<ulint> esa;
+  get_esa(esaFilename, n, esa);
+  r = esa.size();
+
+  cout << "esa values:" << endl;
+  for (size_t i = 0; i < 20; i++) {
+    cout << esa[i] << endl;
+  }
+
+  // here we find out how long it takes to query all the samples being asked for.
+  cout << "\nfinding your query:" << endl;
+  cout << "n: " << sa_n << endl;
+  run = rleBwt.run_of_position(sa_n); // run number
+  cout << "run: " << run << endl;
+  j = rleBwt.run_range(run).second; // size of run
+  cout << "run end: " << j << endl;
+  cout << "run size: " << (j-sa_n) << endl;
+  ulint phiVal = esa[run]; // end sample at specified run
+
+  cout << phiVal << " ";
+  for (size_t iter = 0; iter < (j-sa_n); iter++) {
+    phiVal = idx.Phi(phiVal); // sa-1 until we find n (j-i times)
+    cout << phiVal << " ";
+  }
+  cout << "\n";
 }
 
 // queries the entire r-index.
@@ -133,14 +169,18 @@ void generateSamples(std::set<ulint> &samples, ulint amount, ri_t idx) {
 
 // filename: r-index | esaFilename: end samples | numSamples: how many we want to query
 template<typename ri_t>
-void run(string filename, string esaFilename, ulint numSamples) {
+void run(string filename, string esaFilename, ulint numSamples, uint sa_n) {
   ri_t idx;
   idx.load_from_file(filename.c_str());
   std::set<ulint> querySamples;
   generateSamples(querySamples, numSamples, idx);
 
-  if(numSamples == 0) // 0 means we query the whole index.
-    SA_all(esaFilename, idx);
+  if(numSamples == 0) {// 0 means we query the whole index.
+    if(sa_n == 0)
+      SA_all(esaFilename, idx);
+    else
+      SA_n(esaFilename, idx, sa_n);
+  }
   else {
     SA(querySamples, esaFilename, idx);
   }
@@ -157,7 +197,6 @@ int main(int argc, char** argv) {
   // is that they didn't have the same functions.
   // if(hyb)
   //   run<r_index<sparse_hyb_vector,rle_string_hyb>>(argv[1], argv[2],atoi(argv[3]));
-  // else
 
-  run<r_index<>>(argv[1], argv[2], atoi(argv[3]));
+  run<r_index<>>(argv[1], argv[2], atoi(argv[3]), atoi(argv[4]));
 }
