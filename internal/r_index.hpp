@@ -173,6 +173,9 @@ public:
         cout << "phi_inv_sa size: " << test.get_size() << endl;
         cout << "paths count: " << test.get_num_paths() << endl<<endl;
 
+        cout << "(2.75/3) Query tests ..." << endl;
+        //test.query(4, pred, pred)
+
         cout << "(3/3) Building phi function ..." << flush;
         build_phi(samples_first_vec, samples_last_vec);
         cout << " done. " << endl<<endl;

@@ -7,10 +7,15 @@
 #include <definitions.hpp>
 #include <r_index.hpp>
 #include <ri_rasa_tree.hpp>
+#include "sparse_sd_vector.hpp"
+#include "sparse_hyb_vector.hpp"
 
 using namespace sdsl;
 
+// temp notes for me: pred_to_run is basically esa_map
+
 namespace ri {
+  template<class sparse_bv_type = sparse_sd_vector>
 class rads {
 public:
   rads(){};
@@ -26,7 +31,6 @@ public:
     esa_map.reserve(esa.size());
     phi_inv_sa.resize(esa.size());
     bounds.resize(esa.size());
-    trees_sample_bv.resize(esa.size());
 
     // initialization of map variables
     for(ulint i = 0; i < esa.size(); i++) {
@@ -71,6 +75,7 @@ public:
   void list_paths(std::vector<std::pair<ulint, ulint>> &ssa) {
     std::vector<uint> indegrees(phi_inv_sa.size(), 0); // indegrees of the nodes
     std::vector<bool> visited(phi_inv_sa.size(), false); // visited nodes so far
+    auto temp_trees_bv = vector<bool>(phi_inv_sa.size(), false);
 
     // counting indegrees of the nodes
     for(size_t i = 0; i < phi_inv_sa.size(); i++) {
@@ -103,12 +108,31 @@ public:
         // we can implement a min. path length threshold to include paths, that
         // may not be cycles but can still be used to traverse samples.
         if(is_cycle) { // if the path is a cycle we construct a tree
-          rads_tree branch = rads_tree(current_path, bounds, trees.size(), tree_pointers);
+          rads_tree branch = rads_tree(esa_map, current_path, bounds, trees.size()+1, tree_pointers);
           trees.push_back(branch);
           for(size_t i = 0; i < current_path.size(); i++)
-            trees_sample_bv[current_path[i]] = true; // set the nodes that are in the cycle to true in our bitvector
+            temp_trees_bv[current_path[i]] = true; // set the nodes that are in the cycle to true in our bitvector
         }
       }
+    }
+    std::sort(tree_pointers.begin(), tree_pointers.end());
+    trees_bv = sparse_bv_type(temp_trees_bv);
+  }
+
+  void query(ulint sa_i, sparse_bv_type &pred, int_vector<> &pred_to_run) {
+    // do we need some assertions like phi does?
+    // find run & pred
+    // is pred in a cycle -> bv check
+    // if so use tree, else use phi
+    ulint sa_i_r = pred.predecessor_rank_circular(sa_i); // rank of the pred of sa_i
+    ulint sa_i_j = pred.select(sa_i_r); // select the actual pred
+    if(trees_bv[pred_to_run[sa_i_j]]) { // if true, this sample is in a tree
+      // rank query the index of the run of the sample to get which tree pointer to use
+      // this gives us tree # and leaf node in the tree array
+      trees[std::get<1>(tree_pointers[trees_bv.rank(pred_to_run[sa_i_j])])].query_helper();
+    }
+    else {
+
     }
   }
 
@@ -124,11 +148,11 @@ protected:
   std::unordered_map<ulint, ulint> esa_map;
   std::unordered_map<ulint, ulint> pis_inv;
 
-  std::vector<std::pair<uint, uint>> tree_pointers; // pointers to the corresponding tree & leaf node.
+  std::vector<std::tuple<ulint, uint, uint>> tree_pointers; // pointers to the corresponding run & tree & leaf node.
   std::vector<std::pair<ulint,ulint>> bounds; // lower and upper bounds of each node in the sa graph.
   std::vector<ulint> phi_inv_sa; // adj. list representing the sa graph.
   std::vector<rads_tree> trees; // list of cycle trees.
-  std::vector<bool> trees_sample_bv; // bitvector that tells us which samples are in trees.
+  sparse_bv_type trees_bv; // bitvector that tells us which samples are in trees.
 };
 }
 
