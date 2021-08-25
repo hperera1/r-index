@@ -171,7 +171,8 @@ public:
         cout << "(2.5/3) Constructing rads ..." << endl;
         rads test = rads(samples_first_vec, samples_last_vec);
         cout << "phi_inv_sa size: " << test.get_size() << endl;
-        cout << "paths count: " << test.get_num_paths() << endl<<endl;
+        cout << "paths count: " << test.get_num_paths() << endl;
+        cout << "tree pointers size: " << test.get_num_treept() <<endl<<endl;
 
         cout << "(2.75/3) Query tests ..." << endl;
         //test.query(4, pred, pred)
@@ -237,17 +238,22 @@ public:
      * Phi function. Phi(SA[0]) is undefined
      */
     ulint Phi(ulint i){
+        cout << "phi call: " << endl;
         assert(i != bwt.size()-1);
+        cout << i << endl;
         //jr is the rank of the predecessor of i (circular)
         ulint jr = pred.predecessor_rank_circular(i);
+        cout << jr << endl;
         assert(jr<=r-1);
         //the actual predecessor
         ulint j = pred.select(jr);
+        cout << j << endl;
         assert(jr<r-1 or j == bwt.size()-1);
         //distance from predecessor
         ulint delta = j<i ? i-j : i+1;
         //cannot fall on first run: this can happen only if I call Phi(SA[0])
         assert(pred_to_run[jr]>0);
+        cout << pred_to_run[jr] << endl;
         //sample at the end of previous run
         assert(pred_to_run[jr]-1 < samples_last.size());
         ulint prev_sample = samples_last[ pred_to_run[jr]-1 ];

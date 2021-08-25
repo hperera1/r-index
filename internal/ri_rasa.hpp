@@ -15,7 +15,8 @@ using namespace sdsl;
 // temp notes for me: pred_to_run is basically esa_map
 
 namespace ri {
-  template<class sparse_bv_type = sparse_sd_vector>
+  template<class sparse_bv_type = sparse_sd_vector,
+           class rle_string_t = rle_string_sd>
 class rads {
 public:
   rads(){};
@@ -23,6 +24,10 @@ public:
     init_by_value(ssa, esa);
     cout << "Done. Now listing paths." << endl;
     list_paths(ssa);
+    cout << "Done. Debug info." << endl<<endl;
+    for (size_t i = 0; i < 30; i++) {
+      cout << i << ": " << std::get<0>(tree_pointers[i]) << " " << std::get<1>(tree_pointers[i]) << " " << std::get<2>(tree_pointers[i]) << endl;
+    }
   }
 
   void init_by_value(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
@@ -108,7 +113,7 @@ public:
         // we can implement a min. path length threshold to include paths, that
         // may not be cycles but can still be used to traverse samples.
         if(is_cycle) { // if the path is a cycle we construct a tree
-          rads_tree branch = rads_tree(esa_map, current_path, bounds, trees.size()+1, tree_pointers);
+          rads_tree branch = rads_tree(current_path, bounds, trees.size()+1, tree_pointers);
           trees.push_back(branch);
           for(size_t i = 0; i < current_path.size(); i++)
             temp_trees_bv[current_path[i]] = true; // set the nodes that are in the cycle to true in our bitvector
@@ -117,27 +122,58 @@ public:
     }
     std::sort(tree_pointers.begin(), tree_pointers.end());
     trees_bv = sparse_bv_type(temp_trees_bv);
+    bounds.clear();
   }
 
-  void query(ulint sa_i, sparse_bv_type &pred, int_vector<> &pred_to_run) {
-    // do we need some assertions like phi does?
-    // find run & pred
+  // sa_i is what we are querying
+  // what other args do we need? rle_string?
+  void query(ulint sa_i, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &esa) {
+    // should we do some assertions like phi does?
+
+    // pass pred into the query helper
+
     // is pred in a cycle -> bv check
     // if so use tree, else use phi
-    ulint sa_i_r = pred.predecessor_rank_circular(sa_i); // rank of the pred of sa_i
-    ulint sa_i_j = pred.select(sa_i_r); // select the actual pred
-    if(trees_bv[pred_to_run[sa_i_j]]) { // if true, this sample is in a tree
-      // rank query the index of the run of the sample to get which tree pointer to use
-      // this gives us tree # and leaf node in the tree array
-      trees[std::get<1>(tree_pointers[trees_bv.rank(pred_to_run[sa_i_j])])].query_helper();
-    }
-    else {
 
+    // return SA value at position i (sa_i)
+    ulint run = bwt.run_of_position(sa_i);
+    ulint run_l = bwt.run_range(run).second;
+    ulint sa_j = esa[run]; // sa value at position i
+
+    // call helper_query(sa_j, j-i)
+    helper_query(sa_j, run_l-sa_i, run, pred);
+  }
+
+  // args: sa_j & d (j-i) | returns: what do we need to return? just d?
+  void helper_query(ulint &sa_j, ulint &d, ulint run, sparse_bv_type &pred) {
+    while(d > 0) {
+      ulint sa_jr = pred.predecessor_rank_circular(sa_j);
+      ulint sa_prime = pred.select(sa_jr);
+      ulint cost = sa_j - sa_prime;
+
+      if(in_cycle(sa_prime)) {
+        std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)];
+        std::pair<ulint, ulint> query_result = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
+        // sa_j = pred_to_run[sa_prime] + cost;
+        // d = d-1;
+        // return d;
+      }
     }
+  }
+
+  bool in_cycle(ulint sa) {
+    if(trees_bv[esa_map[sa]])
+      return true;
+
+    return false;
   }
 
   inline int get_size() {
     return phi_inv_sa.size();
+  }
+
+  inline int get_num_treept() {
+    return tree_pointers.size();
   }
 
   inline int get_num_paths() {
@@ -145,11 +181,11 @@ public:
   }
 
 protected:
-  std::unordered_map<ulint, ulint> esa_map;
+  std::unordered_map<ulint, ulint> esa_map; // this is just pred_to_run
   std::unordered_map<ulint, ulint> pis_inv;
 
-  std::vector<std::tuple<ulint, uint, uint>> tree_pointers; // pointers to the corresponding run & tree & leaf node.
-  std::vector<std::pair<ulint,ulint>> bounds; // lower and upper bounds of each node in the sa graph.
+  std::vector<std::tuple<ulint, ulint, uint>> tree_pointers; // pointers to the corresponding run & tree & leaf node.
+  std::vector<std::pair<ulint,ulint>> bounds; // lower and upper bounds of each node in the sa graph. // can be deleted at some point
   std::vector<ulint> phi_inv_sa; // adj. list representing the sa graph.
   std::vector<rads_tree> trees; // list of cycle trees.
   sparse_bv_type trees_bv; // bitvector that tells us which samples are in trees.

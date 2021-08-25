@@ -100,7 +100,7 @@ void SA_n(string esaFilename, r_index<> idx, uint sa_n) {
   cout << "n: " << sa_n << endl;
   run = rleBwt.run_of_position(sa_n); // run number
   cout << "run: " << run << endl;
-  j = rleBwt.run_range(run).second; // size of run
+  j = rleBwt.run_range(run).second; // run ends at this value
   cout << "run end: " << j << endl;
   cout << "run size: " << (j-sa_n) << endl;
   ulint phiVal = esa[run]; // end sample at specified run
@@ -108,7 +108,7 @@ void SA_n(string esaFilename, r_index<> idx, uint sa_n) {
   cout << phiVal << " ";
   for (size_t iter = 0; iter < (j-sa_n); iter++) {
     phiVal = idx.Phi(phiVal); // sa-1 until we find n (j-i times)
-    cout << phiVal << " ";
+    cout << phiVal << endl;
   }
   cout << "\n";
 }
