@@ -140,7 +140,6 @@ public:
     ulint run_l = bwt.run_range(run).second;
     ulint sa_j = esa[run]; // sa value at position i
 
-    // call helper_query(sa_j, j-i)
     helper_query(sa_j, run_l-sa_i, run, pred);
   }
 
@@ -158,6 +157,9 @@ public:
         // d = d-1;
         // return d;
       }
+      else {
+
+      }
     }
   }
 
@@ -172,7 +174,7 @@ public:
     return phi_inv_sa.size();
   }
 
-  inline int get_num_treept() {
+  inline int get_num_treeptr() {
     return tree_pointers.size();
   }
 

@@ -14,8 +14,8 @@ public:
   rads_tree(){};
   rads_tree(std::vector<uint> &cycle, std::vector<std::pair<ulint, ulint>> &bounds, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers){
     size_t n = cycle.size(); // path size
-    tree = std::vector<std::pair<long long int, long long int>>((size_t)1<<(size_t)(ceil(log2(n)) + 1), std::make_pair(0,0)); // tree size initialization.
-    constructor_helper(cycle, bounds, 0, 0, n-1, tree_num, tree_pointers);
+    tree = std::vector<std::pair<long long int, long long int>>((size_t)1<<(size_t)(ceil(log2(n)) + 1), std::make_pair(-1,0)); // tree size initialization.
+    constructor_helper(cycle, bounds, 1, 0, n-1, tree_num, tree_pointers);
   }
 
   // so many arguments...
@@ -29,40 +29,67 @@ public:
       return;
     }
 
-    constructor_helper(cycle, bounds, 2*node+1, begin, mid, tree_num, tree_pointers); // left child
-    constructor_helper(cycle, bounds, 2*node+2, mid+1, end, tree_num, tree_pointers); // right child
-    tree[node].first = tree[2*node+1].first + tree[2*node+2].first; // edge sum of left and right child
-    tree[node].second = std::min(tree[2*node+1].second, tree[2*node+2].second) - tree[2*node+1].first; // edge threshold
+    constructor_helper(cycle, bounds, 2*node, begin, mid, tree_num, tree_pointers); // left child
+    constructor_helper(cycle, bounds, 2*node+1, mid+1, end, tree_num, tree_pointers); // right child
+    tree[node].first = tree[2*node].first + tree[2*node+1].first; // edge sum of left and right child
+    tree[node].second = std::min(tree[2*node].second, tree[2*node+1].second) - tree[2*node].first; // edge threshold
   }
 
   // args: leaf_pos, cost, d | returns: should return a pair methinks
   //                           (sa', d)
-  std::pair<ulint, ulint> query(ulint leaf_pos, uint cumm_cost, uint d) {
-    // in short we go up ^
-    // check if we can keep going ->
-    // if not, we go down v
-    // first to the left and then to the right
-    // if were coming from the left go right
-    // if were at the end of the left tree from the root, we can skip
-    // to the next node with some clever bit tricks :)
-
-    // this is to go up until we can't no more
-    // cond 1: cumm_cost must be within current threshold
-    // cond 2: parent threshold must be positive
-    // cond 3: cumm_cost + cost must be within parent threshold
-    // only then can we go up
-    while((cumm_cost <= tree[leaf_pos].second) && (tree[leaf_pos>>1].second >= 0) && (cumm_cost + tree[leaf_pos].first <= tree[leaf_pos>>1].second)) { // do we make this a function? probably
-      cumm_cost += tree[leaf_pos].first;
-      leaf_pos = leaf_pos>>1;
-    }
-
-
-
-    // at this point we've gone up, now we need to check if we can go down
-    // going down means what? we start going to the right and asking different questions
-    // while we go down
+  std::pair<ulint, ulint> query(ulint leaf_pos, uint cost, uint d) {
+    // begin climbing the tree and only collect when we go to a sibling.
+    // when you go to a parent do not collect the money, that is if the parent has the same left most node.
+    // if youre moving to a subtree where the leftmost node is not the same then we have to collect the money.
+    climb(leaf_pos, cost, d);
 
     return (std::make_pair(leaf_pos, d));
+  }
+
+  void climb(ulint node_pos, uint cost, uint d) {
+    // climbing conditions
+    // 1. node is non-negative
+    // 2. cost does not exceed nodes threshold
+    if(node_pos>>(__builtin_ctzll(~node_pos)) == 2) {
+      node_pos = 3;
+      descend(node_pos, cost, d);
+      return;
+    }
+
+    while((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
+      node_pos = node_pos >> 1;
+    }
+
+    cost += tree[node_pos].first;
+    node_pos = (node_pos << 1) + 1;
+    descend(node_pos, cost, d);
+  }
+
+  void descend(ulint node_pos, uint cost, uint d) {
+    // 1. check node_pos that is passed in
+    // 2. if ✓ then check your immediate sibling
+    // 3. if ✕ then check left child until you get a green light
+    // while we are not at a leaf node
+    while((node_pos < tree.size()) && (tree[node_pos].first >= 0)) {
+      if(node_pos & 1 == 0) { // left node on go -> go to right sibling
+        if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
+          node_pos += 1;
+        }
+        else {
+          node_pos = node_pos << 1;
+        }
+      }
+      else { // right node on go -> go to right child
+        if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
+          node_pos = (node_pos << 1) + 1;
+        }
+        else {
+          node_pos = node_pos << 1;
+        }
+      }
+    }
+
+    return;
   }
 };
 }

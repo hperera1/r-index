@@ -172,7 +172,7 @@ public:
         rads test = rads(samples_first_vec, samples_last_vec);
         cout << "phi_inv_sa size: " << test.get_size() << endl;
         cout << "paths count: " << test.get_num_paths() << endl;
-        cout << "tree pointers size: " << test.get_num_treept() <<endl<<endl;
+        cout << "tree pointers size: " << test.get_num_treeptr() <<endl<<endl;
 
         cout << "(2.75/3) Query tests ..." << endl;
         //test.query(4, pred, pred)
