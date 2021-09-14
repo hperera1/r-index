@@ -105,12 +105,11 @@ void SA_n(string esaFilename, r_index<> idx, uint sa_n) {
   cout << "run size: " << (j-sa_n) << endl;
   ulint phiVal = esa[run]; // end sample at specified run
 
-  cout << phiVal << " ";
+  cout << phiVal << endl;
   for (size_t iter = 0; iter < (j-sa_n); iter++) {
     phiVal = idx.Phi(phiVal); // sa-1 until we find n (j-i times)
     cout << phiVal << endl;
   }
-  cout << "\n";
 }
 
 // queries the entire r-index.
@@ -175,7 +174,7 @@ void run(string filename, string esaFilename, ulint numSamples, uint sa_n) {
   std::set<ulint> querySamples;
   generateSamples(querySamples, numSamples, idx);
 
-  if(numSamples == 0) {// 0 means we query the whole index.
+  if(numSamples == 0) { // 0 means we query the whole index but if followed by a nonzero integer we query that value.
     if(sa_n == 0)
       SA_all(esaFilename, idx);
     else

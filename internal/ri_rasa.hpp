@@ -12,7 +12,10 @@
 
 using namespace sdsl;
 
-// temp notes for me: pred_to_run is basically esa_map
+// temp notes for me:
+// - pred_to_run is basically esa_map
+// - remove the last element in the cycle/tree
+// - fix the way the samples get built
 
 namespace ri {
   template<class sparse_bv_type = sparse_sd_vector,
@@ -24,10 +27,10 @@ public:
     init_by_value(ssa, esa);
     cout << "Done. Now listing paths." << endl;
     list_paths(ssa);
-    cout << "Done. Debug info." << endl<<endl;
-    for (size_t i = 0; i < 30; i++) {
-      cout << i << ": " << std::get<0>(tree_pointers[i]) << " " << std::get<1>(tree_pointers[i]) << " " << std::get<2>(tree_pointers[i]) << endl;
-    }
+    cout << "Done. Optional debug info." << endl<<endl;
+    // for (size_t i = 0; i < 30; i++) {
+    //   cout << i << ": " << std::get<0>(tree_pointers[i]) << " " << std::get<1>(tree_pointers[i]) << " " << std::get<2>(tree_pointers[i]) << endl;
+    // }
   }
 
   void init_by_value(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
@@ -115,13 +118,14 @@ public:
         if(is_cycle) { // if the path is a cycle we construct a tree
           rads_tree branch = rads_tree(current_path, bounds, trees.size()+1, tree_pointers);
           trees.push_back(branch);
-          for(size_t i = 0; i < current_path.size(); i++)
+          for(size_t i = 0; i < current_path.size()-1; i++) // -1 because the the last leaf node in our cycle is useless for queries
             temp_trees_bv[current_path[i]] = true; // set the nodes that are in the cycle to true in our bitvector
         }
       }
     }
     std::sort(tree_pointers.begin(), tree_pointers.end());
     trees_bv = sparse_bv_type(temp_trees_bv);
+
     bounds.clear();
   }
 
@@ -140,25 +144,25 @@ public:
     ulint run_l = bwt.run_range(run).second;
     ulint sa_j = esa[run]; // sa value at position i
 
-    helper_query(sa_j, run_l-sa_i, run, pred);
+    helper_query(sa_j, run_l-sa_i, run, pred_to_run, pred);
   }
 
   // args: sa_j & d (j-i) | returns: what do we need to return? just d?
-  void helper_query(ulint &sa_j, ulint &d, ulint run, sparse_bv_type &pred) {
+  void helper_query(ulint &sa_j, ulint &d, ulint run, int_vector<> &pred_to_run, sparse_bv_type &pred) {
     while(d > 0) {
       ulint sa_jr = pred.predecessor_rank_circular(sa_j);
       ulint sa_prime = pred.select(sa_jr);
       ulint cost = sa_j - sa_prime;
 
-      if(in_cycle(sa_prime)) {
+      if(in_cycle(sa_prime)) { // dont need to use sa_prime, you can use sa_jr
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)];
         std::pair<ulint, ulint> query_result = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
-        // sa_j = pred_to_run[sa_prime] + cost;
+        sa_j = pred_to_run[sa_prime] + cost;
         // d = d-1;
-        // return d;
       }
-      else {
-
+      else { // dont need to call phi, we can just finish the next steps
+        // perform phi
+        // prev_sample & delta
       }
     }
   }
@@ -189,7 +193,7 @@ protected:
   std::vector<std::tuple<ulint, ulint, uint>> tree_pointers; // pointers to the corresponding run & tree & leaf node.
   std::vector<std::pair<ulint,ulint>> bounds; // lower and upper bounds of each node in the sa graph. // can be deleted at some point
   std::vector<ulint> phi_inv_sa; // adj. list representing the sa graph.
-  std::vector<rads_tree> trees; // list of cycle trees.
+  std::vector<rads_tree<>> trees; // list of cycle trees.
   sparse_bv_type trees_bv; // bitvector that tells us which samples are in trees.
 };
 }

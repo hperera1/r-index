@@ -238,25 +238,28 @@ public:
      * Phi function. Phi(SA[0]) is undefined
      */
     ulint Phi(ulint i){
-        cout << "phi call: " << endl;
+        //cout << "\nphi call: " << endl;
         assert(i != bwt.size()-1);
-        cout << i << endl;
+        //cout << "\ti: " << i << endl;
         //jr is the rank of the predecessor of i (circular)
         ulint jr = pred.predecessor_rank_circular(i);
-        cout << jr << endl;
+        //cout << "\tjr: " << jr << endl;
         assert(jr<=r-1);
         //the actual predecessor
         ulint j = pred.select(jr);
-        cout << j << endl;
+        //cout << "\tj: " << j << endl;
         assert(jr<r-1 or j == bwt.size()-1);
         //distance from predecessor
         ulint delta = j<i ? i-j : i+1;
         //cannot fall on first run: this can happen only if I call Phi(SA[0])
         assert(pred_to_run[jr]>0);
-        cout << pred_to_run[jr] << endl;
+        //cout << "\tp2r: " << pred_to_run[jr] << endl;
+        //cout << "\tdelta: " << delta << endl;
         //sample at the end of previous run
         assert(pred_to_run[jr]-1 < samples_last.size());
         ulint prev_sample = samples_last[ pred_to_run[jr]-1 ];
+        //cout << "\tprev_s: " << prev_sample << endl;
+        //cout << bwt.size() << endl;
         return (prev_sample + delta) % bwt.size();
     }
 
