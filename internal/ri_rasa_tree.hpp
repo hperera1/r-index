@@ -51,20 +51,24 @@ public:
     // begin climbing the tree and only collect when we go to a sibling.
     // when you go to a parent do not collect the money, that is if the parent has the same left most node.
     // if youre moving to a subtree where the leftmost node is not the same then we have to collect the money.
-    climb(leaf_pos, cost, d);
-
-    return (std::make_pair(leaf_pos, d));
+    return (climb(leaf_pos, cost, d));
   }
 
-  void climb(ulint node_pos, uint cost, uint d) {
+  std::pair<ulint, ulint> climb(ulint node_pos, uint cost, uint d) {
     // climbing conditions
     // 1. node is non-negative
     // 2. cost does not exceed nodes threshold
     ulint start_pos = node_pos;
-    if(node_pos>>(__builtin_ctzl(~node_pos)) == 2) { // check if when we shift up we get to the root of the left subtree
+
+    // check if when we shift up we get to the root of the left subtree
+    // meaning we can skip forward to the beginning of the right subtree
+    if(node_pos>>(__builtin_ctzl(~node_pos)) == 2) {
       node_pos = 3;
-      descend(node_pos, cost, d); // if so we start our descent
-      return;
+      cost += tree[node_pos].first; // add cost of node that denies us
+
+      descend(node_pos, cost); // if so we start our descent
+      calculate_d(start_pos, node_pos, d);
+      return (std::make_pair(cost, d));
     }
 
     while((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // climb up
@@ -73,10 +77,14 @@ public:
 
     cost += tree[node_pos].first; // add cost of node that denies us
     node_pos = (node_pos << 1) + 1;
-    descend(node_pos, cost, d); // descend using new node_pos, cost, and d
+
+    descend(node_pos, cost); // descend using new node_pos, cost, and d
     calculate_d(start_pos, node_pos, d);
+    return (std::make_pair(cost, d));
   }
 
+  // TO-DO: descent does add to cost
+  // during the descent the node_pos gets shifted around so that calculate_d can do its job
   void descend(ulint &node_pos, uint cost, uint d) {
     // 1. check node_pos that is passed in
     // 2. if ✓ then check your immediate sibling
@@ -100,9 +108,7 @@ public:
         }
       }
     }
-
-    return; // what do we return?
-  }
+  } // i don't think descend has to return anything at all
 
   void calculate_d(ulint start_pos, ulint end_pos, uint &d) {
     if(start_pos >= left_most_i) { // starting from bottom layer

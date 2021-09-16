@@ -13,7 +13,7 @@
 using namespace sdsl;
 
 // temp notes for me:
-// - pred_to_run is basically esa_map
+// - pred_to_run is basically sa_map
 // - remove the last element in the cycle/tree
 // - fix the way the samples get built
 
@@ -33,16 +33,18 @@ public:
     // }
   }
 
+  // TO-DO: change name of both of these function
+  // construction for phi_inverse
   void init_by_value(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
     assert(ssa.size() == esa.size());
     std::vector<ulint> esa_sorted = esa;
-    esa_map.reserve(esa.size());
+    sa_map.reserve(esa.size());
     phi_inv_sa.resize(esa.size());
     bounds.resize(esa.size());
 
     // initialization of map variables
     for(ulint i = 0; i < esa.size(); i++) {
-      esa_map[esa[i]] = i;
+      sa_map[esa[i]] = i;
       if(i < ssa.size() - 1) {
         pis_inv[ssa[i+1].first] = i;
       }
@@ -54,7 +56,7 @@ public:
 
     ulint i = 0; // ssa iterator
     ulint j = 0; // esa iterator
-    ulint node = esa_map[esa_sorted.back()]; // init node as biggest value in pred ds because its circular.
+    ulint node = sa_map[esa_sorted.back()]; // init node as biggest value in pred ds because its circular.
 
     // computing the predecessor values using a merge-sort like combine phase
     while((i < ssa.size()) && (j < esa.size())) {
@@ -66,7 +68,7 @@ public:
         i += 1;
       }
       else {
-        node = esa_map[esa_sorted[j]];
+        node = sa_map[esa_sorted[j]];
         j += 1;
       }
     }
@@ -76,6 +78,49 @@ public:
       bounds[pis_inv[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1];
       bounds[pis_inv[ssa[i].first]].second = esa_sorted[j] - ssa[i].first;
       i += 1;
+    }
+  }
+
+  // construction for phi
+  void init_by_value_phi(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
+    assert(ssa.size() == esa.size());
+    std::vector<std::pair<ulint, ulint>> ssa_sorted = ssa;
+    sa_map.reserve(esa.size());
+    phi_inv_sa.resize(esa.size());
+    bounds.resize(esa.size());
+
+    for(ulint i = 0; i < esa.size(); i++) {
+      sa_map[ssa[i]] = i;
+      if(i > 0) {
+        pis_inv[esa[i-1]] = i;
+      }
+    }
+
+    std::sort(ssa_sorted.begin(), ssa_sorted.end());
+    std::sort(esa.begin(), esa.end());
+
+    ulint i = 0;
+    ulint j = 0;
+    ulint node = sa_map[ssa_sorted.back()];
+
+    while((i < ssa.size()) && (j < esa.size())) {
+      if(esa[j] < ssa_sorted[i].first) {
+        assert(node <= esa[j]);
+        phi_inv_sa[pis_inv[esa[j]]] = node;
+        bounds[pis_inv[esa[j]]].first = esa[j] - ssa_sorted[i-1];
+        bounds[pis_inv[esa[j]]].second = ssa_sorted[i].first - esa[j];
+        j += 1;
+      }
+      else {
+        node = sa_map[ssa_sorted[i]];
+        i += 1;
+      }
+    }
+
+    while(j < esa.size()) {
+      phi_inv_sa[pis_inv[esa[j]]] = node;
+      bounds[pis_inv[esa[j]]].first = esa[j] - ssa_sorted[i-1];
+      bounds[pis_inv[esa[j]]].second = ssa_sorted[i].first - esa[j];
     }
   }
 
@@ -150,17 +195,18 @@ public:
   // args: sa_j & d (j-i) | returns: what do we need to return? just d?
   void helper_query(ulint &sa_j, ulint &d, ulint run, int_vector<> &pred_to_run, sparse_bv_type &pred) {
     while(d > 0) {
-      ulint sa_jr = pred.predecessor_rank_circular(sa_j);
-      ulint sa_prime = pred.select(sa_jr);
-      ulint cost = sa_j - sa_prime;
+      ulint sa_jr = pred.predecessor_rank_circular(sa_j); // start sample predecessor
+      ulint sa_prime = pred.select(sa_jr); // actual predecessor value
+      ulint cost = sa_j - sa_prime; // difference between end sample and predecessor
 
-      if(in_cycle(sa_prime)) { // dont need to use sa_prime, you can use sa_jr
+      if(in_cycle(sa_prime)) { // dont need to use sa_prime, you can use sa_jr because the rank tells you what index to query
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)];
         std::pair<ulint, ulint> query_result = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
-        sa_j = pred_to_run[sa_prime] + cost;
+        // sa_j = pred_to_run[sa_prime] + cost; // is using pred_2_run needed here?
         // d = d-1;
       }
-      else { // dont need to call phi, we can just finish the next steps
+      else {
+        // dont need to call phi, we can just finish the next steps
         // perform phi
         // prev_sample & delta
       }
@@ -168,7 +214,7 @@ public:
   }
 
   bool in_cycle(ulint sa) {
-    if(trees_bv[esa_map[sa]])
+    if(trees_bv[sa_map[sa]])
       return true;
 
     return false;
@@ -187,7 +233,7 @@ public:
   }
 
 protected:
-  std::unordered_map<ulint, ulint> esa_map; // this is just pred_to_run
+  std::unordered_map<ulint, ulint> sa_map; // this is just pred_to_run
   std::unordered_map<ulint, ulint> pis_inv;
 
   std::vector<std::tuple<ulint, ulint, uint>> tree_pointers; // pointers to the corresponding run & tree & leaf node.
