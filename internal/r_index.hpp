@@ -137,12 +137,16 @@ public:
         read_run_ends(fname + ".esa", n, samples_last_vec);
         assert(samples_first_vec.size() == r);
         assert(samples_last_vec.size() == r);
-        cout << "done. " << endl<<endl;
+        cout << "done. " << endl;
 
+        // post rads construction a certain suffix array will be sorted...
         cout << "(2.5/3) Constructing rads ..." << endl;
         rads test = rads(samples_first_vec, samples_last_vec);
         cout << "phi_inv_sa size: " << test.get_size() << endl;
         cout << "paths count: " << test.get_num_paths() << endl;
+        cout << "tree pointers size: " << test.get_num_treeptr() << endl;
+
+        cout << "(2.75/3) Query tests ..." << endl;
 
         cout << "(3/3) Building phi function ..." << flush;
         build_phi(samples_first_vec, samples_last_vec); //
@@ -167,15 +171,6 @@ public:
         cout << "Rate n/r = " << double(bwt.size())/r << endl;
         cout << "log2(r) = " << log2(double(r)) << endl;
         cout << "log2(n/r) = " << log2(double(bwt.size())/r) << endl << endl;
-
-        // post rads construction a certain suffix array will be sorted...
-        cout << "(2.5/3) Constructing rads ..." << endl;
-        rads test = rads(samples_first_vec, samples_last_vec);
-        cout << "phi_inv_sa size: " << test.get_size() << endl;
-        cout << "paths count: " << test.get_num_paths() << endl;
-        cout << "tree pointers size: " << test.get_num_treeptr() <<endl<<endl;
-
-        cout << "(2.75/3) Query tests ..." << endl;
 
         // build_phi sorts the start samples | i assume that phi_inverse would sort the end samples.
         cout << "(3/3) Building phi function ..." << flush;

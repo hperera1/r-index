@@ -90,7 +90,7 @@ public:
     bounds.resize(esa.size());
 
     for(ulint i = 0; i < esa.size(); i++) {
-      sa_map[ssa[i]] = i;
+      sa_map[ssa[i].first] = i;
       if(i > 0) {
         pis_inv[esa[i-1]] = i;
       }
@@ -101,25 +101,25 @@ public:
 
     ulint i = 0;
     ulint j = 0;
-    ulint node = sa_map[ssa_sorted.back()];
+    ulint node = sa_map[ssa_sorted.back().first];
 
     while((i < ssa.size()) && (j < esa.size())) {
       if(esa[j] < ssa_sorted[i].first) {
         assert(node <= esa[j]);
         phi_inv_sa[pis_inv[esa[j]]] = node;
-        bounds[pis_inv[esa[j]]].first = esa[j] - ssa_sorted[i-1];
+        bounds[pis_inv[esa[j]]].first = esa[j] - ssa_sorted[i-1].first;
         bounds[pis_inv[esa[j]]].second = ssa_sorted[i].first - esa[j];
         j += 1;
       }
       else {
-        node = sa_map[ssa_sorted[i]];
+        node = sa_map[ssa_sorted[i].first];
         i += 1;
       }
     }
 
     while(j < esa.size()) {
       phi_inv_sa[pis_inv[esa[j]]] = node;
-      bounds[pis_inv[esa[j]]].first = esa[j] - ssa_sorted[i-1];
+      bounds[pis_inv[esa[j]]].first = esa[j] - ssa_sorted[i-1].first;
       bounds[pis_inv[esa[j]]].second = ssa_sorted[i].first - esa[j];
     }
   }
@@ -139,7 +139,7 @@ public:
     // for all nodes with indegree 0, we check if they are a cycle.
     for(size_t i = 0; i < phi_inv_sa.size(); i++) {
       if(indegrees[i] == 0) {
-        std::vector<uint> current_path;
+        std::vector<ulint> current_path;
         int u = i;
         int v = phi_inv_sa[u];
         visited[u] = true;
