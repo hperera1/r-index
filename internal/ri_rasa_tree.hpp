@@ -20,7 +20,7 @@ public:
   uint left_most_i;
 
   rads_tree(){};
-  rads_tree(std::vector<uint> &cycle, std::vector<std::pair<ulint, ulint>> &bounds, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers){
+  rads_tree(std::vector<ulint> &cycle, std::vector<std::pair<ulint, ulint>> &bounds, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers){
     size_t n = cycle.size(); // path size
     leaf_samples = cycle;
     tree = std::vector<std::pair<long long int, long long int>>((size_t)1<<(size_t)(ceil(log2(n)) + 1), std::make_pair(-1,0)); // tree size initialization.
@@ -102,7 +102,7 @@ public:
     while((node_pos < tree.size()) && (tree[node_pos].first >= 0)) { // 1. check if we are out of bounds 2. check if there is even a node here
       if(node_pos & 1 == 0) { // left node if good -> go to right sibling
         if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
-          cost += tree[node_pos.first];
+          cost += tree[node_pos].first;
           node_pos += 1;
         }
         else {
@@ -122,7 +122,7 @@ public:
     node_pos = node_pos >> 1;
   }
 
-  // calculates distance between leaf nodes
+  // calculates distance between leaf nodes start_pos and end_pos
   ulint calculate_d(ulint start_pos, ulint end_pos) {
     ulint d = 0;
     if(start_pos >= left_most_i) { // starting from bottom layer
