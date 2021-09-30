@@ -81,6 +81,7 @@ public:
     }
   }
 
+  // TO-DO: change name of both of these function
   // construction for phi
   void init_by_value_phi(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
     assert(ssa.size() == esa.size());
@@ -175,12 +176,9 @@ public:
   }
 
   // sa_i is what we are querying
-  // what other args do we need? rle_string?
   void query(ulint sa_i, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &esa) {
     // should we do some assertions like phi does?
-
     // pass pred into the query helper
-
     // is pred in a cycle -> bv check
     // if so use tree, else use phi
 
