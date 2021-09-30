@@ -39,8 +39,8 @@ public:
     assert(ssa.size() == esa.size());
     std::vector<ulint> esa_sorted = esa;
     sa_map.reserve(esa.size());
-    phi_inv_sa.resize(esa.size());
     bounds.resize(esa.size());
+    phi_inv_sa.resize(esa.size());
 
     // initialization of map variables
     for(ulint i = 0; i < esa.size(); i++) {
@@ -189,11 +189,11 @@ public:
     ulint run_l = bwt.run_range(run).second;
     ulint sa_j = esa[run]; // sa value at position i
 
-    helper_query(sa_j, run_l-sa_i, run, pred_to_run, pred);
+    helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, esa);
   }
 
   // args: sa_j & d (j-i) | returns: what do we need to return? just d?
-  void helper_query(ulint &sa_j, ulint &d, ulint run, int_vector<> &pred_to_run, sparse_bv_type &pred) {
+  void helper_query(ulint &sa_j, ulint &d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &esa) {
     while(d > 0) {
       ulint sa_jr = pred.predecessor_rank_circular(sa_j); // start sample predecessor
       ulint sa_prime = pred.select(sa_jr); // actual predecessor value
@@ -201,14 +201,14 @@ public:
 
       if(in_cycle(sa_prime)) { // dont need to use sa_prime, you can use sa_jr because the rank tells you what index to query
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)];
-        std::pair<ulint, ulint> query_result = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
-        // sa_j = pred_to_run[sa_prime] + cost; // is using pred_2_run needed here?
-        // d = d-1;
+        std::pair<ulint, ulint> sa_prime_and_d = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
+        sa_j = pred_to_run[sa_prime_and_d.first];
+        d = d - sa_prime_and_d.second;
       }
-      else {
-        // dont need to call phi, we can just finish the next steps
-        // perform phi
-        // prev_sample & delta
+      else { // finish the last steps of phi
+        ulint delta = sa_prime<sa_j ? sa_j-sa_prime : sa_j+1;
+        ulint prev_sample = esa[ pred_to_run[sa_jr]-1 ]; // we dont have samples_last, need to pass it in.
+        sa_j = (prev_sample + delta) % bwt.size();
       }
     }
   }
