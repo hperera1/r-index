@@ -14,7 +14,6 @@ using namespace sdsl;
 
 // temp notes for me:
 // - pred_to_run is basically sa_map
-// - remove the last element in the cycle/tree
 // - fix the way the samples get built
 
 namespace ri {
@@ -44,7 +43,7 @@ public:
 
     // initialization of map variables
     for(ulint i = 0; i < esa.size(); i++) {
-      sa_map[esa[i]] = i;
+      sa_map[esa[i]] = i; // ! this will be replaced !
       if(i < ssa.size() - 1) {
         pis_inv[ssa[i+1].first] = i;
       }
@@ -58,6 +57,7 @@ public:
     ulint j = 0; // esa iterator
     ulint node = sa_map[esa_sorted.back()]; // init node as biggest value in pred ds because its circular.
 
+    // these bounds are not getting calculated properly...
     // computing the predecessor values using a merge-sort like combine phase
     while((i < ssa.size()) && (j < esa.size())) {
       if(ssa[i].first < esa_sorted[j]) {
@@ -169,9 +169,9 @@ public:
         }
       }
     }
+
     std::sort(tree_pointers.begin(), tree_pointers.end());
     trees_bv = sparse_bv_type(temp_trees_bv);
-
     bounds.clear();
   }
 
