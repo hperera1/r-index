@@ -129,7 +129,7 @@ public:
         cout << "Number of BWT equal-letter runs: r = " << r << endl;
         cout << "Rate n/r = " << double(bwt.size())/r << endl;
         cout << "log2(r) = " << log2(double(r)) << endl;
-        cout << "log2(n/r) = " << log2(double(bwt.size())/r) << endl << endl;
+        cout << "log2(n/r) = " << log2(double(bwt.size())/r) << endl;
         // bwt_scan_ssa(fname + ".bwt", samples_first_vec, samples_last_vec, F, &terminator_position);
         ifs.seekg(0);
         build_F(ifs);
@@ -137,8 +137,13 @@ public:
         read_run_ends(fname + ".esa", n, samples_last_vec);
         assert(samples_first_vec.size() == r);
         assert(samples_last_vec.size() == r);
-        cout << "done. " << endl;
+        cout << "done. " << endl<<endl;
 
+        for (size_t i = 0; i < 15; i++) {
+          cout << samples_last_vec[i] << endl;
+        }
+
+        cout << "\n";
         // post rads construction a certain suffix array will be sorted...
         cout << "(2.5/3) Constructing rads ..." << endl;
         rads test = rads(samples_first_vec, samples_last_vec);
@@ -146,11 +151,17 @@ public:
         cout << "paths count: " << test.get_num_paths() << endl;
         cout << "tree pointers size: " << test.get_num_treeptr() << endl;
 
-        cout << "(2.75/3) Query tests ..." << endl;
+        cout << "\n(2.75/3) Rasa info ..." << endl;
+        cout << "run : sample : tree" << endl;
+        test.print_tree_runs(samples_last_vec);
 
         cout << "(3/3) Building phi function ..." << flush;
         build_phi(samples_first_vec, samples_last_vec); //
         cout << " done. " << endl<<endl;
+
+        cout << "(3.5/3) Query tests ..." << endl;
+        cout << "trying i = 6" << endl;
+        test.query(6, bwt, pred_to_run, pred, samples_last_vec);
     }
 
     void from_bwt(std::string fname) {

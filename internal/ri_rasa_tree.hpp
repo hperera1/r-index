@@ -15,7 +15,7 @@ namespace ri {
 class rads_tree {
 public:
   std::vector<std::pair<long long int, long long int>> tree; // nodes are pairs that represent: (edge cost, edge threshold).
-  std::vector<ulint> leaf_samples; // actual sa sample values
+  std::vector<ulint> leaf_samples; // actual sa sample values represented by run
   sparse_bv_type leaf_node_bv; // bv telling us which node is a leaf node
   uint left_most_i;
 
@@ -43,8 +43,8 @@ public:
       return;
     }
 
-    constructor_helper(bounds, 2*node, begin, mid, tree_num, tree_pointers, leaf_bv); // left child
-    constructor_helper(bounds, 2*node+1, mid+1, end, tree_num, tree_pointers, leaf_bv); // right child
+    constructor_helper(bounds, 2*node, begin, mid, tree_num, tree_pointers, leaf_bv); // construct left child
+    constructor_helper(bounds, 2*node+1, mid+1, end, tree_num, tree_pointers, leaf_bv); // construct right child
     tree[node].first = tree[2*node].first + tree[2*node+1].first; // edge sum of left and right child
     tree[node].second = std::min(tree[2*node].second, tree[2*node+1].second) - tree[2*node].first; // edge threshold
   }
@@ -55,6 +55,7 @@ public:
     // begin climbing the tree and only collect when we go to a sibling.
     // when you go to a parent do not collect the money, that is if the parent has the same left most node.
     // if youre moving to a subtree where the leftmost node is not the same then we have to collect the money.
+    cout << "in query." << endl;
     return (climb(leaf_pos, cost, d));
   }
 
@@ -66,8 +67,11 @@ public:
     // left_most_i is 0 and we get the distance from our start_pos
     // at the end we do leaf_index + the distance that was travelled to get the new sample
     // eg. start_pos = 21 -> leaf_index = 0; distance travelled = 2; leaf_index + distance travelled = 2; new_sample = leaf_samples[2] (11)
+    cout << "in climb." << endl;
+    cout << "check 1" << endl;
     ulint start_pos = node_pos;
     ulint start_leaf_index = calculate_d(left_most_i, start_pos);
+    cout << "check 2" << endl;
 
     // check if when we shift up we get to the root of the left subtree
     // meaning we can skip forward to the beginning of the right subtree and descend
@@ -81,10 +85,12 @@ public:
       return (std::make_pair(leaf_samples[start_leaf_index + distance] + cost, d - distance)); // return new sample and new distance
     }
 
+    cout << "check 3" << endl;
     while((node_pos != 1) && (tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // climb up
       node_pos = node_pos >> 1;
     }
 
+    cout << "check 4" << endl;
     cost += tree[node_pos<<1].first; // add cost of node that denies us
     node_pos = (node_pos<<1) + 1;
 
@@ -99,6 +105,7 @@ public:
     // 2. if ✓ then check your immediate sibling
     // 3. if ✕ then check left child until you get a green light
     // while we are not at a leaf node
+    cout << "in descend." << endl;
     while((node_pos < tree.size()) && (tree[node_pos].first >= 0)) { // 1. check if we are out of bounds 2. check if there is even a node here
       if(node_pos & 1 == 0) { // left node if good -> go to right sibling
         if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
@@ -124,6 +131,7 @@ public:
 
   // calculates distance between leaf nodes start_pos and end_pos
   ulint calculate_d(ulint start_pos, ulint end_pos) {
+    cout << "start pos: " << start_pos << ", end pos: " << end_pos << endl;
     ulint d = 0;
     if(start_pos >= left_most_i) { // starting from bottom layer
       if(end_pos >= left_most_i) { // going to bottom layer bot->bot

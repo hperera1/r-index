@@ -24,7 +24,7 @@ class rads {
 public:
   rads(){};
   rads(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
-    init_by_value(ssa, esa);
+    init_by_value_phi(ssa, esa);
     cout << "Done. Now listing paths." << endl;
     list_paths(ssa);
     cout << "Done. Optional debug info." << endl<<endl;
@@ -33,7 +33,7 @@ public:
     // }
   }
 
-  // TO-DO: change name of both of these function
+  // TO-DO: change name of both of these function, think about the sorting that you do here
   // construction for phi_inverse
   void init_by_value(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
     assert(ssa.size() == esa.size());
@@ -81,15 +81,17 @@ public:
     }
   }
 
-  // TO-DO: change name of both of these function
+  // TO-DO: change name of both of these function, think about the sorting that you do here
   // construction for phi
   void init_by_value_phi(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
     assert(ssa.size() == esa.size());
     std::vector<std::pair<ulint, ulint>> ssa_sorted = ssa;
+    std::vector<ulint> esa_sorted = esa;
     sa_map.reserve(esa.size());
     phi_inv_sa.resize(esa.size());
     bounds.resize(esa.size());
 
+    cout << "building SA map." << endl;
     for(ulint i = 0; i < esa.size(); i++) {
       sa_map[ssa[i].first] = i;
       if(i > 0) {
@@ -98,18 +100,19 @@ public:
     }
 
     std::sort(ssa_sorted.begin(), ssa_sorted.end());
-    std::sort(esa.begin(), esa.end());
+    std::sort(esa_sorted.begin(), esa_sorted.end());
 
     ulint i = 0;
     ulint j = 0;
     ulint node = sa_map[ssa_sorted.back().first];
 
+    cout << "building graph." << endl;
     while((i < ssa.size()) && (j < esa.size())) {
-      if(esa[j] < ssa_sorted[i].first) {
-        assert(node <= esa[j]);
-        phi_inv_sa[pis_inv[esa[j]]] = node;
-        bounds[pis_inv[esa[j]]].first = esa[j] - ssa_sorted[i-1].first;
-        bounds[pis_inv[esa[j]]].second = ssa_sorted[i].first - esa[j];
+      if(esa_sorted[j] < ssa_sorted[i].first) {
+        assert(node <= esa_sorted[j]);
+        phi_inv_sa[pis_inv[esa_sorted[j]]] = node;
+        bounds[pis_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa_sorted[i-1].first;
+        bounds[pis_inv[esa_sorted[j]]].second = ssa_sorted[i].first - esa_sorted[j];
         j += 1;
       }
       else {
@@ -118,10 +121,12 @@ public:
       }
     }
 
+    cout << "final graph loop." << endl;
     while(j < esa.size()) {
-      phi_inv_sa[pis_inv[esa[j]]] = node;
-      bounds[pis_inv[esa[j]]].first = esa[j] - ssa_sorted[i-1].first;
-      bounds[pis_inv[esa[j]]].second = ssa_sorted[i].first - esa[j];
+      phi_inv_sa[pis_inv[esa_sorted[j]]] = node;
+      bounds[pis_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa_sorted[i-1].first;
+      bounds[pis_inv[esa_sorted[j]]].second = ssa_sorted[i].first - esa_sorted[j];
+      j += 1;
     }
   }
 
@@ -176,6 +181,7 @@ public:
   }
 
   // sa_i is what we are querying
+  // we can change std::vector<int> esa to int_vector<> esa (r_index copies samples_last_vec to samples_last)
   void query(ulint sa_i, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &esa) {
     // should we do some assertions like phi does?
     // pass pred into the query helper
@@ -187,23 +193,39 @@ public:
     ulint run_l = bwt.run_range(run).second;
     ulint sa_j = esa[run]; // sa value at position i
 
+    cout << "run: " << run << endl;
+    cout << "run l: " << run_l << endl;
+    cout << "sample: " << sa_j << endl;
+
     helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, esa);
   }
 
   // args: sa_j & d (j-i) | returns: what do we need to return? just d?
-  void helper_query(ulint &sa_j, ulint &d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &esa) {
+  void helper_query(ulint &sa_j, ulint d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &esa) {
+    cout << "distance: " << d << endl;
+
     while(d > 0) {
       ulint sa_jr = pred.predecessor_rank_circular(sa_j); // start sample predecessor
       ulint sa_prime = pred.select(sa_jr); // actual predecessor value
       ulint cost = sa_j - sa_prime; // difference between end sample and predecessor
 
+      cout << "sa_jr: " << sa_jr << endl;
+      cout << "sa_prime: " << sa_prime << endl;
+      cout << "cost: " << cost << endl;
+
       if(in_cycle(sa_prime)) { // dont need to use sa_prime, you can use sa_jr because the rank tells you what index to query
+        cout << "\nwere in a cycle!" << endl;
+
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)];
+
+        cout << "sample run: " << std::get<0>(tree_info) << ", sample tree: " << std::get<1>(tree_info) << ", sample leaf: " << std::get<2>(tree_info) << endl;
+
         std::pair<ulint, ulint> sa_prime_and_d = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
+
         sa_j = pred_to_run[sa_prime_and_d.first];
         d = d - sa_prime_and_d.second;
       }
-      else { // finish the last steps of phi
+      else { // continue the iteration using phi
         ulint delta = sa_prime<sa_j ? sa_j-sa_prime : sa_j+1;
         ulint prev_sample = esa[ pred_to_run[sa_jr]-1 ]; // we dont have samples_last, need to pass it in.
         sa_j = (prev_sample + delta) % bwt.size();
@@ -228,6 +250,19 @@ public:
 
   inline int get_num_paths() {
     return trees.size();
+  }
+
+  void get_largest_tree() {
+
+  }
+
+  void print_tree_runs(std::vector<ulint> &esa) {
+    for(size_t i = 0; i < 25; i++) {
+      cout << std::get<0>(tree_pointers[i]) << " : " << esa[std::get<0>(tree_pointers[i])] << " : " << std::get<1>(tree_pointers[i]) << endl;
+    }
+
+    cout << "\n";
+    cout << "trees[1] size: " << trees[1].leaf_samples.size() << endl<<endl;
   }
 
 protected:
