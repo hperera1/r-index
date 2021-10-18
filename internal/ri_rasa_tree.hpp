@@ -22,8 +22,8 @@ public:
   rads_tree(){};
   rads_tree(std::vector<ulint> &cycle, std::vector<std::pair<ulint, ulint>> &bounds, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers){
     size_t n = cycle.size(); // path size
-    leaf_samples = cycle;
-    tree = std::vector<std::pair<long long int, long long int>>((size_t)1<<(size_t)(ceil(log2(n)) + 1), std::make_pair(-1,0)); // tree size initialization.
+    leaf_samples = cycle; // store the samples in the cycle
+    tree = std::vector<std::pair<long long int, long long int>>((size_t)1<<(size_t)(ceil(log2(n)) + 1), std::make_pair(-1,0)); // tree size initialization, default the costs to -1
     auto temp_leaf_bv = vector<bool>(tree.size(), false);
 
     constructor_helper(bounds, 1, 0, n-1, tree_num, tree_pointers, temp_leaf_bv);
@@ -46,7 +46,7 @@ public:
     constructor_helper(bounds, 2*node, begin, mid, tree_num, tree_pointers, leaf_bv); // construct left child
     constructor_helper(bounds, 2*node+1, mid+1, end, tree_num, tree_pointers, leaf_bv); // construct right child
     tree[node].first = tree[2*node].first + tree[2*node+1].first; // edge sum of left and right child
-    tree[node].second = std::min(tree[2*node].second, tree[2*node+1].second) - tree[2*node].first; // edge threshold
+    tree[node].second = std::min(tree[2*node].second, tree[2*node+1].second - tree[2*node].first); // edge threshold
   }
 
   // args: leaf_pos, cost, d | returns: returns new sample and distance left
@@ -104,9 +104,8 @@ public:
     // 1. check node_pos that is passed in
     // 2. if ✓ then check your immediate sibling
     // 3. if ✕ then check left child until you get a green light
-    // while we are not at a leaf node
-    cout << "in descend." << endl;
-    while((node_pos < tree.size()) && (tree[node_pos].first >= 0)) { // 1. check if we are out of bounds 2. check if there is even a node here
+    // while((node_pos < tree.size()) && (tree[node_pos].first >= 0)) { // 1. check if we are out of bounds 2. check if there is even a node here
+    while(leaf_bv[node_pos]) { // while we are not at a leaf node
       if(node_pos & 1 == 0) { // left node if good -> go to right sibling
         if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
           cost += tree[node_pos].first;

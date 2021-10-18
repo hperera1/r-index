@@ -16,9 +16,9 @@ bool hyb=false;
 void help() {
   cout << "ri-query: RA to SA using phi" << endl;
   cout << "Usage:       ri-query <index> <end samples> <# of queries>" << endl;
+  cout << "   <index>   index file (with extension .ri)\n   <end samples>   .esa file\n   <# of queries>   inputting '0', queries the entire index\n   (optional) <index of query>   provide index to query" << endl;
   //cout << "   -h        use hybrid bitvectors instead of elias-fano in both RLBWT and predecessor structures. -h is required "<<endl;
   //cout << "             if the index was built with -h options enabled."<<endl;
-  cout << "   <index>   index file (with extension .ri)\n   <end samples>   .esa file\n   <# of queries>   inputting '0', queries the entire index" << endl;
   exit(0);
 }
 
@@ -38,6 +38,7 @@ vector<ulint>& get_esa(std::string fname, ulint n, vector<ulint> &esa) {
     while (ifs.read((char*) &x, 5) && ifs.read((char*) &y, 5)) {
         esa.push_back(y ? y-1 : n-1);
     }
+
     return esa;
 }
 
@@ -64,9 +65,8 @@ void SA(std::set<ulint> &samples, string esaFilename, r_index<> idx) {
 
     for (size_t iter = 0; iter < (j-i); iter++)
        phiVal = idx.Phi(phiVal); // iterate backwards j-i times to find value of i.
-
-    //cout << "i: " << i << ", run: " << run << ", j: " << j << ", phiVal: " << phiVal << endl;
   }
+
   auto t2 = std::chrono::high_resolution_clock::now();
   ulint total1 = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>(t2 - t1).count();
   ulint total2 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
@@ -135,8 +135,6 @@ void SA_all(string esaFilename, r_index<> idx) {
 
     for (size_t iter = 0; iter < (j-i); iter++)
       phiVal = idx.Phi(phiVal);
-
-    //cout << "i: " << i << ", run: " << run << ", j: " << j << ", phiVal: " << phiVal << endl;
   }
   auto t2 = std::chrono::high_resolution_clock::now();
   ulint total1 = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>(t2 - t1).count();
@@ -154,7 +152,6 @@ void generateSamples(std::set<ulint> &samples, ulint amount, ri_t idx) {
   cout << "generating samples:" << endl;
   ulint min = 1;
   ulint max = idx.number_of_runs() - 1;
-  //ulint max = idx.bwt_size() - 1;
   cout << "min: " << min << ", max: " << max << ", amount: " << amount << endl;
 
   ulint seed = 2706265417;
@@ -163,6 +160,7 @@ void generateSamples(std::set<ulint> &samples, ulint amount, ri_t idx) {
 
   while(samples.size() != amount)
     samples.insert(dist(generator));
+
   cout << "done." << endl;
 }
 
