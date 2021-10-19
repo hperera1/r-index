@@ -144,9 +144,13 @@ public:
         }
 
         cout << "\n";
-        // post rads construction a certain suffix array will be sorted...
-        // cout << "(2.5/3) Constructing rads ..." << endl;
-        // rads test = rads(samples_first_vec, samples_last_vec, pred);
+        cout << "(3/3) Building phi function ..." << flush;
+        std::vector<std::pair<ulint, ulint>> unsorted_samples_first_vec = samples_first_vec; // we need an unsorted ssa temporarily
+        build_phi(samples_first_vec, samples_last_vec); //
+        cout << " done. " << endl<<endl;
+
+        cout << "(3.5/3) Building rads ..." << flush;
+        rads rads_ds = rads(unsorted_samples_first_vec, samples_last_vec, pred, pred_to_run);
         // cout << "phi_inv_sa size: " << test.get_size() << endl;
         // cout << "paths count: " << test.get_num_paths() << endl;
         // cout << "tree pointers size: " << test.get_num_treeptr() << endl;
@@ -155,11 +159,7 @@ public:
         // cout << "run : sample : tree" << endl;
         // test.print_tree_runs(samples_last_vec);
 
-        cout << "(3/3) Building phi function ..." << flush;
-        build_phi(samples_first_vec, samples_last_vec); //
-        cout << " done. " << endl<<endl;
-
-        cout << "(3.5/3) Query tests ..." << endl;
+        // cout << "(3.5/3) Query tests ..." << endl;
         //cout << "trying i = 6" << endl;
         //test.query(6, bwt, pred_to_run, pred, samples_last_vec);
     }
