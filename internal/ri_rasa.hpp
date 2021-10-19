@@ -23,63 +23,63 @@ class rads {
 public:
   rads(){};
   rads(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred, int_vector<> &pred_to_run) {
-    build_rads_phi(ssa, esa, pred, pred_to_run);
+    build_rads_phi(unsorted_ssa, ssa, esa, pred, pred_to_run);
     cout << "Done. Now listing paths." << endl;
     list_paths(ssa);
   }
 
   // TO-DO: change name of both of these function, think about the sorting that you do here
   // construction for phi_inverse
-  void build_rads_phi_inv(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
-    assert(ssa.size() == esa.size());
-    std::vector<ulint> esa_sorted = esa;
-    sa_map.reserve(esa.size());
-    bounds.resize(esa.size());
-    sa_graph.resize(esa.size());
-
-    // initialization of map variables
-    for(ulint i = 0; i < esa.size(); i++) {
-      sa_map[esa[i]] = i; // ! this will be replaced !
-      if(i < ssa.size() - 1) {
-        phi_map[ssa[i+1].first] = i;
-      }
-    }
-
-    // esa needs to be sorted for everything past this.
-    std::sort(ssa.begin(), ssa.end()); // this wont be needed once sa_graph is sorted.
-    std::sort(esa_sorted.begin(), esa_sorted.end());
-
-    ulint i = 0; // ssa iterator
-    ulint j = 0; // esa iterator
-    ulint node = sa_map[esa_sorted.back()]; // init node as biggest value in pred ds because its circular.
-
-    // computing the predecessor values using a merge-sort like combine phase
-    while((i < ssa.size()) && (j < esa.size())) {
-      if(ssa[i].first < esa_sorted[j]) {
-        assert(node <= ssa[i].first);
-        ulint successor_rank = pred.predecessor_rank_circular(phi_map[ssa[i].first]) + 1;
-        ulint successor = pred.select(successor_rank);
-        sa_graph[phi_map[ssa[i].first]] = node; // this has to be improved, the hash is unnecessary
-        bounds[phi_map[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1]; // start_sample - pred(start_sample)
-        bounds[phi_map[ssa[i].first]].second = successor - esa[phi_map[ssa[i].first]]; // successor of sample - pred of sample
-        i += 1;
-      }
-      else {
-        node = sa_map[esa_sorted[j]];
-        j += 1;
-      }
-    }
-
-    while(i < ssa.size()) {
-      ulint successor_rank = pred.predecessor_rank_circular(esa[phi_map[ssa[i].first]]) + 1;
-      ulint successor = pred.select(successor_rank);
-      ulint predecessor = pred.select(pred_rank - 1);
-      sa_graph[phi_map[ssa[i].first]] = node;
-      bounds[phi_map[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1];
-      bounds[phi_map[ssa[i].first]].second = successor - predecessor;
-      i += 1;
-    }
-  }
+  // void build_rads_phi_inv(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
+  //   assert(ssa.size() == esa.size());
+  //   std::vector<ulint> esa_sorted = esa;
+  //   sa_map.reserve(esa.size());
+  //   bounds.resize(esa.size());
+  //   sa_graph.resize(esa.size());
+  //
+  //   // initialization of map variables
+  //   for(ulint i = 0; i < esa.size(); i++) {
+  //     sa_map[esa[i]] = i; // ! this will be replaced !
+  //     if(i < ssa.size() - 1) {
+  //       phi_map[ssa[i+1].first] = i;
+  //     }
+  //   }
+  //
+  //   // esa needs to be sorted for everything past this.
+  //   std::sort(ssa.begin(), ssa.end()); // this wont be needed once sa_graph is sorted.
+  //   std::sort(esa_sorted.begin(), esa_sorted.end());
+  //
+  //   ulint i = 0; // ssa iterator
+  //   ulint j = 0; // esa iterator
+  //   ulint node = sa_map[esa_sorted.back()]; // init node as biggest value in pred ds because its circular.
+  //
+  //   // computing the predecessor values using a merge-sort like combine phase
+  //   while((i < ssa.size()) && (j < esa.size())) {
+  //     if(ssa[i].first < esa_sorted[j]) {
+  //       assert(node <= ssa[i].first);
+  //       ulint successor_rank = pred.predecessor_rank_circular(phi_map[ssa[i].first]) + 1;
+  //       ulint successor = pred.select(successor_rank);
+  //       sa_graph[phi_map[ssa[i].first]] = node; // this has to be improved, the hash is unnecessary
+  //       bounds[phi_map[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1]; // start_sample - pred(start_sample)
+  //       bounds[phi_map[ssa[i].first]].second = successor - esa[phi_map[ssa[i].first]]; // successor of sample - pred of sample
+  //       i += 1;
+  //     }
+  //     else {
+  //       node = sa_map[esa_sorted[j]];
+  //       j += 1;
+  //     }
+  //   }
+  //
+  //   while(i < ssa.size()) {
+  //     ulint successor_rank = pred.predecessor_rank_circular(esa[phi_map[ssa[i].first]]) + 1;
+  //     ulint successor = pred.select(successor_rank);
+  //     ulint predecessor = pred.select(pred_rank - 1);
+  //     sa_graph[phi_map[ssa[i].first]] = node;
+  //     bounds[phi_map[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1];
+  //     bounds[phi_map[ssa[i].first]].second = successor - predecessor;
+  //     i += 1;
+  //   }
+  // }
 
   // TO-DO: change name of both of these function, think about the sorting that you do here
   // construction for phi
@@ -99,24 +99,24 @@ public:
 
     ulint i = 0;
     ulint j = 0;
-    ulint node = pred_to_run[ssa_sorted.back().first];
+    ulint node = pred_to_run[ssa.back().first];
     std::sort(esa_sorted.begin(), esa_sorted.end());
 
     // building edges between samples (u,v)
     cout << "Building graph ..." << endl;
     while((i < ssa.size()) && (j < esa.size())) {
-      if(esa_sorted[j] < ssa_sorted[i].first) {
+      if(esa_sorted[j] < ssa[i].first) {
         assert(node <= esa_sorted[j]);
         ulint successor_rank = pred.predecessor_rank_circular(unsorted_ssa[phi_map[esa_sorted[j]]].first) + 1;
         ulint successor = pred.select(successor_rank);
         ulint predecessor = pred.select(successor_rank - 1);
         sa_graph[phi_map[esa_sorted[j]]] = node;
-        bounds[phi_map[esa_sorted[j]]].first = esa_sorted[j] - ssa_sorted[i - 1].first; // v - pred(v)
+        bounds[phi_map[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first; // v - pred(v)
         bounds[phi_map[esa_sorted[j]]].second = successor - predecessor; // succ(u) - pred(u)
         j += 1;
       }
       else {
-        node = pred_to_run[ssa_sorted[i].first];
+        node = pred_to_run[ssa[i].first];
         i += 1;
       }
     }
@@ -127,7 +127,7 @@ public:
       ulint successor = pred.select(successor_rank);
       ulint predecessor = pred.select(successor_rank - 1);
       sa_graph[phi_map[esa_sorted[j]]] = node;
-      bounds[phi_map[esa_sorted[j]]].first = esa_sorted[j] - ssa_sorted[i - 1].first; // v - pred(v)
+      bounds[phi_map[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first; // v - pred(v)
       bounds[phi_map[esa_sorted[j]]].second = successor - predecessor; // succ(u) - pred(u)
       j += 1;
     }
@@ -237,8 +237,8 @@ public:
   }
 
   bool in_cycle(ulint sa) {
-    if(trees_bv[pred_to_run[sa]])
-      return true;
+    // if(trees_bv[pred_to_run[sa]])
+    //   return true;
 
     return false;
   }
