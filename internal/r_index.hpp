@@ -145,23 +145,23 @@ public:
 
         cout << "\n";
         // post rads construction a certain suffix array will be sorted...
-        cout << "(2.5/3) Constructing rads ..." << endl;
-        rads test = rads(samples_first_vec, samples_last_vec);
-        cout << "phi_inv_sa size: " << test.get_size() << endl;
-        cout << "paths count: " << test.get_num_paths() << endl;
-        cout << "tree pointers size: " << test.get_num_treeptr() << endl;
-
-        cout << "\n(2.75/3) Rasa info ..." << endl;
-        cout << "run : sample : tree" << endl;
-        test.print_tree_runs(samples_last_vec);
+        // cout << "(2.5/3) Constructing rads ..." << endl;
+        // rads test = rads(samples_first_vec, samples_last_vec, pred);
+        // cout << "phi_inv_sa size: " << test.get_size() << endl;
+        // cout << "paths count: " << test.get_num_paths() << endl;
+        // cout << "tree pointers size: " << test.get_num_treeptr() << endl;
+        //
+        // cout << "\n(2.75/3) Rasa info ..." << endl;
+        // cout << "run : sample : tree" << endl;
+        // test.print_tree_runs(samples_last_vec);
 
         cout << "(3/3) Building phi function ..." << flush;
         build_phi(samples_first_vec, samples_last_vec); //
         cout << " done. " << endl<<endl;
 
         cout << "(3.5/3) Query tests ..." << endl;
-        cout << "trying i = 6" << endl;
-        test.query(6, bwt, pred_to_run, pred, samples_last_vec);
+        //cout << "trying i = 6" << endl;
+        //test.query(6, bwt, pred_to_run, pred, samples_last_vec);
     }
 
     void from_bwt(std::string fname) {
@@ -250,22 +250,22 @@ public:
         //cout << "\ti: " << i << endl;
         //jr is the rank of the predecessor of i (circular)
         ulint jr = pred.predecessor_rank_circular(i);
-        //cout << "\tjr: " << jr << endl;
+        cout << "\tjr: " << jr << endl;
         assert(jr<=r-1);
         //the actual predecessor
         ulint j = pred.select(jr);
-        //cout << "\tj: " << j << endl;
+        cout << "\tj: " << j << endl;
         assert(jr<r-1 or j == bwt.size()-1);
         //distance from predecessor
         ulint delta = j<i ? i-j : i+1;
         //cannot fall on first run: this can happen only if I call Phi(SA[0])
         assert(pred_to_run[jr]>0);
-        //cout << "\tp2r: " << pred_to_run[jr] << endl;
-        //cout << "\tdelta: " << delta << endl;
+        cout << "\tp2r: " << pred_to_run[jr] << endl;
+        cout << "\tdelta: " << delta << endl;
         //sample at the end of previous run
         assert(pred_to_run[jr]-1 < samples_last.size());
         ulint prev_sample = samples_last[ pred_to_run[jr]-1 ];
-        //cout << "\tprev_s: " << prev_sample << endl;
+        cout << "\tprev_s: " << prev_sample << endl;
         //cout << bwt.size() << endl;
         return (prev_sample + delta) % bwt.size();
     }

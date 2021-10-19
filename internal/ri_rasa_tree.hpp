@@ -105,7 +105,7 @@ public:
     // 2. if ✓ then check your immediate sibling
     // 3. if ✕ then check left child until you get a green light
     // while((node_pos < tree.size()) && (tree[node_pos].first >= 0)) { // 1. check if we are out of bounds 2. check if there is even a node here
-    while(leaf_bv[node_pos]) { // while we are not at a leaf node
+    while(leaf_node_bv[node_pos]) { // while we are not at a leaf node
       if(node_pos & 1 == 0) { // left node if good -> go to right sibling
         if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
           cost += tree[node_pos].first;

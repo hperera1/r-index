@@ -22,8 +22,8 @@ namespace ri {
 class rads {
 public:
   rads(){};
-  rads(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
-    init_by_value_phi(ssa, esa);
+  rads(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
+    init_by_value_phi(ssa, esa, pred);
     cout << "Done. Now listing paths." << endl;
     list_paths(ssa);
     cout << "Done. Optional debug info." << endl<<endl;
@@ -34,7 +34,7 @@ public:
 
   // TO-DO: change name of both of these function, think about the sorting that you do here
   // construction for phi_inverse
-  void init_by_value(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
+  void init_by_value(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
     assert(ssa.size() == esa.size());
     std::vector<ulint> esa_sorted = esa;
     sa_map.reserve(esa.size());
@@ -57,14 +57,15 @@ public:
     ulint j = 0; // esa iterator
     ulint node = sa_map[esa_sorted.back()]; // init node as biggest value in pred ds because its circular.
 
-    // these bounds are not getting calculated properly...
     // computing the predecessor values using a merge-sort like combine phase
     while((i < ssa.size()) && (j < esa.size())) {
       if(ssa[i].first < esa_sorted[j]) {
         assert(node <= ssa[i].first);
+        ulint successor_rank = pred.predecessor_rank_circular(pis_inv[ssa[i].first]) + 1;
+        ulint successor = pred.select(successor_rank);
         phi_inv_sa[pis_inv[ssa[i].first]] = node; // this has to be improved, the hash is unnecessary
-        bounds[pis_inv[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1];
-        bounds[pis_inv[ssa[i].first]].second = esa_sorted[j] - ssa[i].first;
+        bounds[pis_inv[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1]; // start_sample - pred(start_sample)
+        bounds[pis_inv[ssa[i].first]].second = successor - esa[pis_inv[ssa[i].first]]; // successor of sample - pred of sample
         i += 1;
       }
       else {
@@ -74,16 +75,20 @@ public:
     }
 
     while(i < ssa.size()) {
+      ulint successor_rank = pred.predecessor_rank_circular(esa[pis_inv[ssa[i].first]]) + 1;
+      ulint successor = pred.select(successor_rank);
+      ulint predecessor = pred.select(pred_rank - 1);
       phi_inv_sa[pis_inv[ssa[i].first]] = node;
       bounds[pis_inv[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1];
-      bounds[pis_inv[ssa[i].first]].second = esa_sorted[j] - ssa[i].first;
+      bounds[pis_inv[ssa[i].first]].second = successor - predecessor;
       i += 1;
     }
   }
 
   // TO-DO: change name of both of these function, think about the sorting that you do here
   // construction for phi
-  void init_by_value_phi(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa) {
+  void init_by_value_phi(std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
+    cout << "init for phi." << endl;
     assert(ssa.size() == esa.size());
     std::vector<std::pair<ulint, ulint>> ssa_sorted = ssa;
     std::vector<ulint> esa_sorted = esa;
@@ -110,9 +115,11 @@ public:
     while((i < ssa.size()) && (j < esa.size())) {
       if(esa_sorted[j] < ssa_sorted[i].first) {
         assert(node <= esa_sorted[j]);
+        ulint successor_rank = pred.predecessor_rank_circular(ssa[pis_inv[esa_sorted[i]]) + 1;
+        ulint successor = pred.select(successor_rank);
         phi_inv_sa[pis_inv[esa_sorted[j]]] = node;
         bounds[pis_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa_sorted[i-1].first;
-        bounds[pis_inv[esa_sorted[j]]].second = ssa_sorted[i].first - esa_sorted[j];
+        bounds[pis_inv[esa_sorted[j]]].second = successor - ssa[pis_inv[esa_sorted[i]]];
         j += 1;
       }
       else {
@@ -125,7 +132,7 @@ public:
     while(j < esa.size()) {
       phi_inv_sa[pis_inv[esa_sorted[j]]] = node;
       bounds[pis_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa_sorted[i-1].first;
-      bounds[pis_inv[esa_sorted[j]]].second = ssa_sorted[i].first - esa_sorted[j];
+      bounds[pis_inv[esa_sorted[j]]].second = successor - esa[pis_inv[ssa[i].first]];
       j += 1;
     }
   }
