@@ -26,11 +26,13 @@ public:
     build_rads_phi(unsorted_ssa, ssa, esa, pred);
     cout << "Searching paths ..." << endl;
     find_cycles(ssa);
-    cout << "Debug info ..." << endl<<endl;
+    cout << "Debug info:" << endl;
+    cout << "Done." << endl;
   }
 
-  // TO-DO: think about the sorting that you do here
+  // TO-DO: how to make efficient?
   // construction for phi_inverse
+  // unsorted_ssa: samples_first before sort | ssa: sorted samples_first (post phi) | esa: samples_last | pred: predecessor data structure used to calculate successors and preds
   void build_rads_phi_inv(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
     assert(ssa.size() == esa.size());
     std::vector<ulint> esa_sorted = esa;
@@ -83,15 +85,16 @@ public:
     }
   }
 
-  // TO-DO: think about the sorting that you do here
+  // TO-DO: how to make efficient?
   // construction for phi
+  // unsorted_ssa: samples_first before sort | ssa: sorted samples_first (post phi) | esa: samples_last | pred: predecessor data structure used to calculate successors and preds
   void build_rads_phi(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
     cout << "Building rasa for phi ..." << endl;
     assert(ssa.size() == esa.size());
-    std::vector<ulint> esa_sorted = esa;
     sa_map.reserve(esa.size());
     sa_graph.resize(esa.size());
     bounds.resize(esa.size());
+    std::vector<ulint> esa_sorted = esa;
 
     cout << "Building SA map ..." << endl;
     for(ulint i = 0; i < esa.size(); i++) {
@@ -101,10 +104,10 @@ public:
       }
     }
 
-    std::sort(esa_sorted.begin(), esa_sorted.end());
     ulint i = 0;
     ulint j = 0;
     ulint node = sa_map[ssa.back().first];
+    std::sort(esa_sorted.begin(), esa_sorted.end());
 
     cout << "Building graph ..." << endl;
     while((i < ssa.size()) && (j < esa.size())) {
@@ -114,7 +117,7 @@ public:
         ulint successor = pred.select(successor_rank);
         ulint predecessor = pred.select(successor_rank - 1);
         sa_graph[phi_x_inv[esa_sorted[j]]] = node;
-        bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i-1].first;
+        bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first;
         bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor;
         j += 1;
       }
@@ -129,7 +132,7 @@ public:
       ulint successor = pred.select(successor_rank);
       ulint predecessor = pred.select(successor_rank - 1);
       sa_graph[phi_x_inv[esa_sorted[j]]] = node;
-      bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i-1].first;
+      bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first;
       bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor;
       j += 1;
     }
@@ -169,7 +172,7 @@ public:
             is_cycle = true;
         }
 
-        // we can implement a min. path length threshold to include paths, that
+        // we can implement a min. path length threshold to include paths that
         // may not be cycles but can still be used to traverse samples.
         if(is_cycle) { // if the path is a cycle we construct a tree
           rads_tree branch = rads_tree(current_path, bounds, trees.size()+1, tree_pointers);
@@ -245,29 +248,16 @@ public:
     return false;
   }
 
-  inline int get_size() {
-    return sa_graph.size();
-  }
-
-  inline int get_num_treeptr() {
+  inline int get_num_trees() {
     return tree_pointers.size();
   }
 
-  inline int get_num_paths() {
-    return trees.size();
-  }
-
-  void get_largest_tree() {
-
-  }
-
-  void print_tree_runs(std::vector<ulint> &esa) {
-    for(size_t i = 0; i < 25; i++) {
-      cout << std::get<0>(tree_pointers[i]) << " : " << esa[std::get<0>(tree_pointers[i])] << " : " << std::get<1>(tree_pointers[i]) << endl;
+  void print_tree_runs(std::vector<ulint> &ssa) {
+    for(size_t i = 0; i < 15; i++) {
+      cout << "i: " << i << ", s_sample:" << ssa[std::get<0>(tree_pointers[i])] << endl;
+      cout << "run #: " << std::get<0>(tree_pointers[i]) << ", tree #: " << std::get<1>(tree_pointers[i]) << ", leaf node: " << std::get<2>(tree_pointers[i]) << endl;
+      cout << "tree size: " << trees[i].leaf_samples.size() << endl << endl;
     }
-
-    cout << "\n";
-    cout << "trees[1] size: " << trees[1].leaf_samples.size() << endl<<endl;
   }
 
 protected:
