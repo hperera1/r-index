@@ -26,7 +26,9 @@ public:
     build_rads_phi(unsorted_ssa, ssa, esa, pred);
     cout << "Searching paths ..." << endl;
     find_cycles(ssa);
+    cout << "--------------------------" << endl;
     cout << "Debug info:" << endl;
+    cout << "Largest tree: " << this->get_largest_tree() << endl;
     cout << "Done." << endl;
   }
 
@@ -221,6 +223,7 @@ public:
       cout << "sa_prime: " << sa_prime << endl;
       cout << "cost: " << cost << endl;
 
+      // check if pred is in a cycle
       if(in_cycle(sa_prime)) { // dont need to use sa_prime, you can use sa_jr because the rank tells you what index to query
         cout << "\nwere in a cycle!" << endl;
 
@@ -252,22 +255,34 @@ public:
     return tree_pointers.size();
   }
 
-  void print_tree_runs(std::vector<ulint> &ssa) {
-    for(size_t i = 0; i < 15; i++) {
-      cout << "i: " << i << ", s_sample:" << ssa[std::get<0>(tree_pointers[i])] << endl;
-      cout << "run #: " << std::get<0>(tree_pointers[i]) << ", tree #: " << std::get<1>(tree_pointers[i]) << ", leaf node: " << std::get<2>(tree_pointers[i]) << endl;
-      cout << "tree size: " << trees[i].leaf_samples.size() << endl << endl;
+  int get_largest_tree() {
+    int max_tree_size = 0;
+    for(int i = 0; i < trees.size(); i++) {
+      if(trees[i].leaf_samples.size() > max_tree_size)
+        max_tree_size = trees[i].leaf_samples.size();
     }
+
+    return max_tree_size;
+  }
+
+  void print_tree_runs(std::vector<std::pair<ulint, ulint>> &ssa) {
+    for(size_t i = 0; i < 15; i++) {
+      cout << "i: " << i << ", s_sample: " << ssa[std::get<0>(tree_pointers[i])].first << endl;
+      cout << "run #: " << std::get<0>(tree_pointers[i]) << ", tree #: " << std::get<1>(tree_pointers[i]) << ", leaf node: " << std::get<2>(tree_pointers[i]) << endl;
+    }
+
+    cout << "tree[1] size: " << trees[1].leaf_samples.size() << endl;
+    cout << "tree[3] size: " << trees[3].leaf_samples.size() << endl;
   }
 
 protected:
   std::unordered_map<ulint, ulint> sa_map; // this is just pred_to_run but pred_to_run wasn't working?
   std::unordered_map<ulint, ulint> phi_x_inv; //
 
+  std::vector<rads_tree<>> trees; // list of trees.
   std::vector<std::tuple<ulint, ulint, uint>> tree_pointers; // pointers to the corresponding run & tree & leaf node.
   std::vector<std::pair<ulint,ulint>> bounds; // lower and upper bounds of each node in the sa graph. // can be deleted at some point
   std::vector<ulint> sa_graph; // adj. list representing the sa graph.
-  std::vector<rads_tree<>> trees; // list of cycle trees.
   sparse_bv_type trees_bv; // bitvector that tells us which samples are in trees.
 };
 }
