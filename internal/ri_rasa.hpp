@@ -23,34 +23,31 @@ class rads {
 public:
   rads(){};
   rads(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
-    init_by_value_phi(unsorted_ssa, ssa, esa, pred);
-    cout << "Done. Now listing paths." << endl;
-    list_paths(ssa);
-    cout << "Done. Optional debug info." << endl<<endl;
-    // for (size_t i = 0; i < 30; i++) {
-    //   cout << i << ": " << std::get<0>(tree_pointers[i]) << " " << std::get<1>(tree_pointers[i]) << " " << std::get<2>(tree_pointers[i]) << endl;
-    // }
+    build_rads_phi(unsorted_ssa, ssa, esa, pred);
+    cout << "Searching paths ..." << endl;
+    find_cycles(ssa);
+    cout << "Debug info ..." << endl<<endl;
   }
 
-  // TO-DO: change name of both of these function, think about the sorting that you do here
+  // TO-DO: think about the sorting that you do here
   // construction for phi_inverse
-  void init_by_value(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
+  void build_rads_phi_inv(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
     assert(ssa.size() == esa.size());
     std::vector<ulint> esa_sorted = esa;
     sa_map.reserve(esa.size());
     bounds.resize(esa.size());
-    phi_inv_sa.resize(esa.size());
+    sa_graph.resize(esa.size());
 
     // initialization of map variables
     for(ulint i = 0; i < esa.size(); i++) {
       sa_map[esa[i]] = i; // ! this will be replaced !
       if(i < ssa.size() - 1) {
-        pis_inv[ssa[i+1].first] = i;
+        phi_x_inv[ssa[i+1].first] = i;
       }
     }
 
     // esa needs to be sorted for everything past this.
-    std::sort(ssa.begin(), ssa.end()); // this wont be needed once phi_inv_sa is sorted.
+    std::sort(ssa.begin(), ssa.end()); // this wont be needed once sa_graph is sorted.
     std::sort(esa_sorted.begin(), esa_sorted.end());
 
     ulint i = 0; // ssa iterator
@@ -61,12 +58,12 @@ public:
     while((i < ssa.size()) && (j < esa.size())) {
       if(ssa[i].first < esa_sorted[j]) {
         assert(node <= ssa[i].first);
-        ulint successor_rank = pred.predecessor_rank_circular(pis_inv[ssa[i].first]) + 1;
+        ulint successor_rank = pred.predecessor_rank_circular(phi_x_inv[ssa[i].first]) + 1;
         ulint successor = pred.select(successor_rank);
         ulint predecessor = pred.select(successor_rank - 1);
-        phi_inv_sa[pis_inv[ssa[i].first]] = node; // this has to be improved, the hash is unnecessary
-        bounds[pis_inv[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1]; // start_sample - pred(start_sample)
-        bounds[pis_inv[ssa[i].first]].second = successor - esa[pis_inv[ssa[i].first]]; // successor of sample - pred of sample
+        sa_graph[phi_x_inv[ssa[i].first]] = node; // this has to be improved, the hash is unnecessary
+        bounds[phi_x_inv[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1]; // start_sample - pred(start_sample)
+        bounds[phi_x_inv[ssa[i].first]].second = successor - esa[phi_x_inv[ssa[i].first]]; // successor of sample - pred of sample
         i += 1;
       }
       else {
@@ -76,31 +73,31 @@ public:
     }
 
     while(i < ssa.size()) {
-      ulint successor_rank = pred.predecessor_rank_circular(esa[pis_inv[ssa[i].first]]) + 1;
+      ulint successor_rank = pred.predecessor_rank_circular(esa[phi_x_inv[ssa[i].first]]) + 1;
       ulint successor = pred.select(successor_rank);
       ulint predecessor = pred.select(successor_rank - 1);
-      phi_inv_sa[pis_inv[ssa[i].first]] = node;
-      bounds[pis_inv[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1];
-      bounds[pis_inv[ssa[i].first]].second = successor - predecessor;
+      sa_graph[phi_x_inv[ssa[i].first]] = node;
+      bounds[phi_x_inv[ssa[i].first]].first = ssa[i].first - esa_sorted[j-1];
+      bounds[phi_x_inv[ssa[i].first]].second = successor - predecessor;
       i += 1;
     }
   }
 
-  // TO-DO: change name of both of these function, think about the sorting that you do here
+  // TO-DO: think about the sorting that you do here
   // construction for phi
-  void init_by_value_phi(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
-    cout << "init for phi." << endl;
+  void build_rads_phi(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
+    cout << "Building rasa for phi ..." << endl;
     assert(ssa.size() == esa.size());
     std::vector<ulint> esa_sorted = esa;
     sa_map.reserve(esa.size());
-    phi_inv_sa.resize(esa.size());
+    sa_graph.resize(esa.size());
     bounds.resize(esa.size());
 
-    cout << "building SA map." << endl;
+    cout << "Building SA map ..." << endl;
     for(ulint i = 0; i < esa.size(); i++) {
       sa_map[unsorted_ssa[i].first] = i;
       if(i > 0) {
-        pis_inv[esa[i-1]] = i;
+        phi_x_inv[esa[i-1]] = i;
       }
     }
 
@@ -109,16 +106,16 @@ public:
     ulint j = 0;
     ulint node = sa_map[ssa.back().first];
 
-    cout << "building graph." << endl;
+    cout << "Building graph ..." << endl;
     while((i < ssa.size()) && (j < esa.size())) {
       if(esa_sorted[j] < ssa[i].first) {
         assert(node <= esa_sorted[j]);
-        ulint successor_rank = pred.predecessor_rank_circular(ssa[pis_inv[esa_sorted[i]]].first) + 1;
+        ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
         ulint successor = pred.select(successor_rank);
         ulint predecessor = pred.select(successor_rank - 1);
-        phi_inv_sa[pis_inv[esa_sorted[j]]] = node;
-        bounds[pis_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i-1].first;
-        bounds[pis_inv[esa_sorted[j]]].second = successor - predecessor;
+        sa_graph[phi_x_inv[esa_sorted[j]]] = node;
+        bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i-1].first;
+        bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor;
         j += 1;
       }
       else {
@@ -127,43 +124,42 @@ public:
       }
     }
 
-    cout << "final graph loop." << endl;
     while(j < esa.size()) {
-      ulint successor_rank = pred.predecessor_rank_circular(ssa[pis_inv[esa_sorted[i]]].first) + 1;
+      ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
       ulint successor = pred.select(successor_rank);
       ulint predecessor = pred.select(successor_rank - 1);
-      phi_inv_sa[pis_inv[esa_sorted[j]]] = node;
-      bounds[pis_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i-1].first;
-      bounds[pis_inv[esa_sorted[j]]].second = successor - predecessor;
+      sa_graph[phi_x_inv[esa_sorted[j]]] = node;
+      bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i-1].first;
+      bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor;
       j += 1;
     }
   }
 
-  // list_paths() finds all cycles in our graph.
-  void list_paths(std::vector<std::pair<ulint, ulint>> &ssa) {
-    std::vector<uint> indegrees(phi_inv_sa.size(), 0); // indegrees of the nodes
-    std::vector<bool> visited(phi_inv_sa.size(), false); // visited nodes so far
-    auto temp_trees_bv = vector<bool>(phi_inv_sa.size(), false);
+  // find_cycles() finds all cycles in our graph.
+  void find_cycles(std::vector<std::pair<ulint, ulint>> &ssa) {
+    std::vector<uint> indegrees(sa_graph.size(), 0); // indegrees of the nodes
+    std::vector<bool> visited(sa_graph.size(), false); // visited nodes so far
+    auto temp_trees_bv = vector<bool>(sa_graph.size(), false);
 
     // counting indegrees of the nodes
-    for(size_t i = 0; i < phi_inv_sa.size(); i++) {
-      if(phi_inv_sa[i] >= 0)
-        indegrees[phi_inv_sa[i]] += 1;
+    for(size_t i = 0; i < sa_graph.size(); i++) {
+      if(sa_graph[i] >= 0)
+        indegrees[sa_graph[i]] += 1;
     }
 
     // for all nodes with indegree 0, we check if they are a cycle.
-    for(size_t i = 0; i < phi_inv_sa.size(); i++) {
+    for(size_t i = 0; i < sa_graph.size(); i++) {
       if(indegrees[i] == 0) {
         std::vector<ulint> current_path;
         int u = i;
-        int v = phi_inv_sa[u];
+        int v = sa_graph[u];
         visited[u] = true;
         current_path.push_back(u);
 
         while(visited[v] == false) {
           current_path.push_back(v);
           visited[v] = true;
-          v = phi_inv_sa[v];
+          v = sa_graph[v];
         }
 
         // scan the current path and see if v is in it
@@ -250,7 +246,7 @@ public:
   }
 
   inline int get_size() {
-    return phi_inv_sa.size();
+    return sa_graph.size();
   }
 
   inline int get_num_treeptr() {
@@ -275,12 +271,12 @@ public:
   }
 
 protected:
-  std::unordered_map<ulint, ulint> sa_map; // this is just pred_to_run
-  std::unordered_map<ulint, ulint> pis_inv;
+  std::unordered_map<ulint, ulint> sa_map; // this is just pred_to_run but pred_to_run wasn't working?
+  std::unordered_map<ulint, ulint> phi_x_inv; //
 
   std::vector<std::tuple<ulint, ulint, uint>> tree_pointers; // pointers to the corresponding run & tree & leaf node.
   std::vector<std::pair<ulint,ulint>> bounds; // lower and upper bounds of each node in the sa graph. // can be deleted at some point
-  std::vector<ulint> phi_inv_sa; // adj. list representing the sa graph.
+  std::vector<ulint> sa_graph; // adj. list representing the sa graph.
   std::vector<rads_tree<>> trees; // list of cycle trees.
   sparse_bv_type trees_bv; // bitvector that tells us which samples are in trees.
 };
