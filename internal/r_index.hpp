@@ -150,7 +150,7 @@ public:
         cout << " done. " << endl<<endl;
 
         cout << "(3.5/3) Building rads ..." << flush;
-        rads rads_ds = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred, pred_to_run);
+        rads rads_ds = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
         // cout << "phi_inv_sa size: " << test.get_size() << endl;
         // cout << "paths count: " << test.get_num_paths() << endl;
         // cout << "tree pointers size: " << test.get_num_treeptr() << endl;
