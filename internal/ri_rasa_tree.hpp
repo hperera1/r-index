@@ -15,7 +15,7 @@ namespace ri {
 class rads_tree {
 public:
   std::vector<std::pair<long long int, long long int>> tree; // nodes are pairs that represent: (edge cost, edge threshold).
-  std::vector<ulint> leaf_samples; // actual sa sample values represented by run
+  std::vector<ulint> leaf_samples; // actual sa sample values represented by run index
   sparse_bv_type leaf_node_bv; // bv telling us which node is a leaf node
   uint left_most_i;
 
@@ -39,6 +39,7 @@ public:
       tree[node].first = (long long int)bounds[begin].first; // edge cost
       tree[node].second = (long long int)bounds[begin].second; // edge threshold
       tree_pointers.push_back(std::make_tuple(leaf_samples[begin], tree_num, node));
+      //cout << leaf_samples[begin] << " " << node << endl;
       leaf_bv[node] = true;
       return;
     }
@@ -55,7 +56,7 @@ public:
     // begin climbing the tree and only collect when we go to a sibling.
     // when you go to a parent do not collect the money, that is if the parent has the same left most node.
     // if youre moving to a subtree where the leftmost node is not the same then we have to collect the money.
-    cout << "in query." << endl;
+    cout << "Querying tree ..." << endl;
     return (climb(leaf_pos, cost, d));
   }
 
@@ -67,7 +68,7 @@ public:
     // left_most_i is 0 and we get the distance from our start_pos
     // at the end we do leaf_index + the distance that was travelled to get the new sample
     // eg. start_pos = 21 -> leaf_index = 0; distance travelled = 2; leaf_index + distance travelled = 2; new_sample = leaf_samples[2] (11)
-    cout << "in climb." << endl;
+    cout << "Climbing ..." << endl;
     cout << "check 1" << endl;
     ulint start_pos = node_pos;
     ulint start_leaf_index = calculate_d(left_most_i, start_pos);
@@ -132,24 +133,63 @@ public:
   ulint calculate_d(ulint start_pos, ulint end_pos) {
     cout << "start pos: " << start_pos << ", end pos: " << end_pos << endl;
     ulint d = 0;
+
+    cout << "\nBit vector:" << endl;
+    for(int i = 0; i < leaf_node_bv.size(); i++) {
+      cout << leaf_node_bv[i] << endl;
+    }
+
     if(start_pos >= left_most_i) { // starting from bottom layer
+      cout << "start pos >= left_most_i." << endl;
       if(end_pos >= left_most_i) { // going to bottom layer bot->bot
-        d += leaf_node_bv.rank(end_pos) - leaf_node_bv.rank(start_pos) - leaf_node_bv.rank((start_pos>>1)) + leaf_node_bv.rank((end_pos>>1));
+        cout << "end_pos >= left_most_i" << endl;
+        cout << "end pos rank" << endl;
+        d += leaf_node_bv.rank(end_pos);
+        cout << "start pos rank" << endl;
+        d -= leaf_node_bv.rank(start_pos);
+        cout << "start pos shift rank" << endl;
+        d -= leaf_node_bv.rank((start_pos>>1));
+        cout << "end pos shift rank" << endl;
+        d += leaf_node_bv.rank((end_pos>>1));
       }
       else { // going to top layer bot->top
+        cout << "endpos < left_most_i" << endl;
         d += leaf_node_bv.rank(end_pos) - leaf_node_bv.rank(start_pos) - leaf_node_bv.rank((start_pos>>1)) + leaf_node_bv.rank((end_pos<<1));
       }
     }
     else { // starting from top layer
+      cout << "start pos < left_most_i" << endl;
       if(end_pos >= left_most_i) {// going to bottom layer top->bot
+        cout << "end pos >= left_most_i" << endl;
         d += leaf_node_bv.rank(end_pos) - leaf_node_bv.rank(start_pos) - leaf_node_bv.rank((start_pos<<1)) + leaf_node_bv.rank((end_pos>>1));
       }
       else { // going to top layer top->top
+        cout << "end pos < left_most_i" << endl;
         d += leaf_node_bv.rank(end_pos) - leaf_node_bv.rank(start_pos) - leaf_node_bv.rank((start_pos<<1)) + leaf_node_bv.rank((end_pos<<1));
       }
     }
 
     return d;
+  }
+
+  void print_array() {
+    cout << "Printing array ..." << endl;
+    for (size_t i = 0; i < tree.size(); i++) {
+      cout << "(" << tree[i].first << ", " << tree[i].second << ") ";
+    }
+
+    cout << endl;
+    int leaf_counter = 0;
+    for (size_t i = 0; i < leaf_node_bv.size(); i++) {
+      if(leaf_node_bv[i]) {
+        cout << " 1,";
+        leaf_counter++;
+      }
+      else {
+        cout << " -,";
+      }
+    }
+    cout << endl;
   }
 };
 }

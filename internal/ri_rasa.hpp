@@ -29,7 +29,6 @@ public:
     cout << "--------------------------" << endl;
     cout << "Debug info:" << endl;
     cout << "Largest tree: " << this->get_largest_tree() << endl;
-    cout << "Done." << endl;
   }
 
   // TO-DO: how to make efficient?
@@ -91,12 +90,12 @@ public:
   // construction for phi
   // unsorted_ssa: samples_first before sort | ssa: sorted samples_first (post phi) | esa: samples_last | pred: predecessor data structure used to calculate successors and preds
   void build_rads_phi(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
-    cout << "Building rasa for phi ..." << endl;
+    cout << "Building rads for phi ..." << endl;
     assert(ssa.size() == esa.size());
     sa_map.reserve(esa.size());
     sa_graph.resize(esa.size());
     bounds.resize(esa.size());
-    std::vector<ulint> esa_sorted = esa;
+    std::vector<ulint> esa_sorted = esa; // we sort a temp array to not mess with esa
 
     cout << "Building SA map ..." << endl;
     for(ulint i = 0; i < esa.size(); i++) {
@@ -177,7 +176,7 @@ public:
         // we can implement a min. path length threshold to include paths that
         // may not be cycles but can still be used to traverse samples.
         if(is_cycle) { // if the path is a cycle we construct a tree
-          rads_tree branch = rads_tree(current_path, bounds, trees.size()+1, tree_pointers);
+          rads_tree branch = rads_tree(current_path, bounds, trees.size(), tree_pointers);
           trees.push_back(branch);
           for(size_t i = 0; i < current_path.size()-1; i++) // -1 because the the last leaf node in our cycle is useless for queries
             temp_trees_bv[current_path[i]] = true; // set the nodes that are in the cycle to true in our bitvector
@@ -192,7 +191,7 @@ public:
 
   // sa_i is what we are querying
   // we can change std::vector<int> esa to int_vector<> esa (r_index copies samples_last_vec to samples_last)
-  void query(ulint sa_i, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &esa) {
+  void query(ulint sa_i, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &sa) {
     // should we do some assertions like phi does?
     // pass pred into the query helper
     // is pred in a cycle -> bv check
@@ -201,22 +200,22 @@ public:
     // return SA value at position i (sa_i)
     ulint run = bwt.run_of_position(sa_i);
     ulint run_l = bwt.run_range(run).second;
-    ulint sa_j = esa[run]; // sa value at position i
+    ulint sa_j = sa[run]; // sa value at position i
 
     cout << "run: " << run << endl;
     cout << "run l: " << run_l << endl;
     cout << "sample: " << sa_j << endl;
 
-    helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, esa);
+    helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, sa);
   }
 
   // args: sa_j & d (j-i) | returns: what do we need to return? just d?
-  void helper_query(ulint &sa_j, ulint d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &esa) {
+  void helper_query(ulint &sa_j, ulint d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &sa) {
     cout << "distance: " << d << endl;
 
     while(d > 0) {
       ulint sa_jr = pred.predecessor_rank_circular(sa_j); // start sample predecessor
-      ulint sa_prime = pred.select(sa_jr); // actual predecessor value
+      ulint sa_prime = pred.select(sa_jr); // actual predecessor value of sa_j
       ulint cost = sa_j - sa_prime; // difference between end sample and predecessor
 
       cout << "sa_jr: " << sa_jr << endl;
@@ -225,7 +224,7 @@ public:
 
       // check if pred is in a cycle
       if(in_cycle(sa_prime)) { // dont need to use sa_prime, you can use sa_jr because the rank tells you what index to query
-        cout << "\nwere in a cycle!" << endl;
+        cout << "\nwere in a cycle ..." << endl;
 
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)];
 
@@ -238,7 +237,7 @@ public:
       }
       else { // continue the iteration using phi
         ulint delta = sa_prime<sa_j ? sa_j-sa_prime : sa_j+1;
-        ulint prev_sample = esa[ pred_to_run[sa_jr]-1 ]; // we dont have samples_last, need to pass it in.
+        ulint prev_sample = sa[ pred_to_run[sa_jr]-1 ]; // we dont have samples_last, need to pass it in.
         sa_j = (prev_sample + delta) % bwt.size();
       }
     }
@@ -266,13 +265,32 @@ public:
   }
 
   void print_tree_runs(std::vector<std::pair<ulint, ulint>> &ssa) {
-    for(size_t i = 0; i < 15; i++) {
+    for(size_t i = 0; i < 10; i++) {
       cout << "i: " << i << ", s_sample: " << ssa[std::get<0>(tree_pointers[i])].first << endl;
       cout << "run #: " << std::get<0>(tree_pointers[i]) << ", tree #: " << std::get<1>(tree_pointers[i]) << ", leaf node: " << std::get<2>(tree_pointers[i]) << endl;
     }
 
-    cout << "tree[1] size: " << trees[1].leaf_samples.size() << endl;
-    cout << "tree[3] size: " << trees[3].leaf_samples.size() << endl;
+    // for(size_t i = 0; i < tree_pointers.size(); i++) {
+    //   if(std::get<1>(tree_pointers[i]) == 0) {
+    //     cout << "i: " << i << ", s_sample: " << ssa[std::get<0>(tree_pointers[i])].first << endl;
+    //     cout << "run #: " << std::get<0>(tree_pointers[i]) << ", tree #: " << std::get<1>(tree_pointers[i]) << ", leaf node: " << std::get<2>(tree_pointers[i]) << endl;
+    //   }
+    // }
+
+    // cout << endl;
+    // for(size_t i = 0; i < trees[0].leaf_samples.size(); i++) {
+    //   cout << trees[0].leaf_samples[i] << endl;
+    // }
+
+    cout << endl;
+    for(size_t i = 0; i < 8; i++) {
+      cout << trees[0].leaf_samples[i] << endl;
+    }
+    cout << endl;
+
+    // cout << "\ntree[0] size: " << trees[0].leaf_samples.size() << endl;
+    // cout << "tree[1] size: " << trees[1].leaf_samples.size() << endl;
+    // cout << "tree[2] size: " << trees[2].leaf_samples.size() << endl;
   }
 
 protected:
