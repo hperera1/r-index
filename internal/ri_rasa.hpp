@@ -116,7 +116,7 @@ public:
     while((i < ssa.size()) && (j < esa.size())) {
       // this will always be false on the first iteration
       if(esa_sorted[j] < ssa[i].first) { // so long as the end sample is smaller than the start sample
-        // assert(i == 0 || curr_pred <= esa_sorted[j]);
+        // assert(i == 0 || curr_pred <= esa_sorted[j]); // this assertion does not work because we would need to get esa_sorted[j]'s run position, not sample position
         ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
         ulint successor = pred.select(successor_rank);
         ulint predecessor = pred.select(successor_rank - 1);
@@ -126,7 +126,7 @@ public:
         j += 1;
       }
       else {
-        curr_pred = sa_map[ssa[i].first]; 
+        curr_pred = sa_map[ssa[i].first];
         i += 1;
       }
     }
