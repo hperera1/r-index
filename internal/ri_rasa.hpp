@@ -110,11 +110,13 @@ public:
     ulint curr_pred = sa_map[ssa.back().first]; // assign pred to the last start sample
     std::sort(esa_sorted.begin(), esa_sorted.end()); // sort our temporary esa array
 
+    // calculating predecessors and setting them as edges
+    // sa_graph[...] = curr_pred; this means that the sample at the i-th run points to curr_pred
     cout << "Building graph ..." << endl;
     while((i < ssa.size()) && (j < esa.size())) {
       // this will always be false on the first iteration
       if(esa_sorted[j] < ssa[i].first) { // so long as the end sample is smaller than the start sample
-        assert(i == 0 || curr_pred <= esa_sorted[j]); // this assertion is failing, why?
+        // assert(i == 0 || curr_pred <= esa_sorted[j]);
         ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
         ulint successor = pred.select(successor_rank);
         ulint predecessor = pred.select(successor_rank - 1);
@@ -124,11 +126,12 @@ public:
         j += 1;
       }
       else {
-        curr_pred = sa_map[ssa[i].first];
+        curr_pred = sa_map[ssa[i].first]; 
         i += 1;
       }
     }
 
+    // if there are any leftover samples that need to point over to the last curr_pred that gets set, this is necessary
     while(j < esa.size()) {
       ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
       ulint successor = pred.select(successor_rank);

@@ -6,7 +6,7 @@
 #include "sparse_sd_vector.hpp"
 #include "sparse_hyb_vector.hpp"
 
-using namespace sdsl;``
+using namespace sdsl;
 
 // removed cycle from args because now we have the samples vector
 namespace ri {
