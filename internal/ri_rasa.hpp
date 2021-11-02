@@ -99,21 +99,22 @@ public:
 
     cout << "Building SA map ..." << endl;
     for(ulint i = 0; i < esa.size(); i++) {
-      sa_map[unsorted_ssa[i].first] = i;
+      sa_map[unsorted_ssa[i].first] = i; // sa_map just assignes run values to the ssa samples
       if(i > 0) {
-        phi_x_inv[esa[i-1]] = i;
+        phi_x_inv[esa[i-1]] = i; // array to tell you which samples phi takes you to
       }
     }
 
     ulint i = 0;
     ulint j = 0;
-    ulint curr_pred = sa_map[ssa.back().first];
-    std::sort(esa_sorted.begin(), esa_sorted.end());
+    ulint curr_pred = sa_map[ssa.back().first]; // assign pred to the last start sample
+    std::sort(esa_sorted.begin(), esa_sorted.end()); // sort our temporary esa array
 
     cout << "Building graph ..." << endl;
     while((i < ssa.size()) && (j < esa.size())) {
-      if(esa_sorted[j] < ssa[i].first) {
-        assert(i == 0 || curr_pred <= esa_sorted[j]);
+      // this will always be false on the first iteration
+      if(esa_sorted[j] < ssa[i].first) { // so long as the end sample is smaller than the start sample
+        assert(i == 0 || curr_pred <= esa_sorted[j]); // this assertion is failing, why?
         ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
         ulint successor = pred.select(successor_rank);
         ulint predecessor = pred.select(successor_rank - 1);
