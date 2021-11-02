@@ -128,6 +128,13 @@ TARGET_LINK_LIBRARIES(ri-space divsufsort64)
 TARGET_LINK_LIBRARIES(ri-space z)
 TARGET_LINK_LIBRARIES(ri-space klib)
 
+add_executable(ri-tree-test ri-rasa-tree-test.cpp)
+TARGET_LINK_LIBRARIES(ri-tree-test sdsl)
+TARGET_LINK_LIBRARIES(ri-tree-test divsufsort)
+TARGET_LINK_LIBRARIES(ri-tree-test divsufsort64)
+TARGET_LINK_LIBRARIES(ri-tree-test z)
+TARGET_LINK_LIBRARIES(ri-tree-test klib)
+
 add_executable(ri-query ri-query.cpp)
 TARGET_LINK_LIBRARIES(ri-query sdsl)
 TARGET_LINK_LIBRARIES(ri-query divsufsort)

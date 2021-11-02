@@ -107,23 +107,23 @@ public:
 
     ulint i = 0;
     ulint j = 0;
-    ulint node = sa_map[ssa.back().first];
+    ulint curr_pred = sa_map[ssa.back().first];
     std::sort(esa_sorted.begin(), esa_sorted.end());
 
     cout << "Building graph ..." << endl;
     while((i < ssa.size()) && (j < esa.size())) {
       if(esa_sorted[j] < ssa[i].first) {
-        assert(node <= esa_sorted[j]);
+        assert(i == 0 || curr_pred <= esa_sorted[j]);
         ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
         ulint successor = pred.select(successor_rank);
         ulint predecessor = pred.select(successor_rank - 1);
-        sa_graph[phi_x_inv[esa_sorted[j]]] = node;
+        sa_graph[phi_x_inv[esa_sorted[j]]] = curr_pred;
         bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first;
         bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor;
         j += 1;
       }
       else {
-        node = sa_map[ssa[i].first];
+        curr_pred = sa_map[ssa[i].first];
         i += 1;
       }
     }
@@ -132,7 +132,7 @@ public:
       ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
       ulint successor = pred.select(successor_rank);
       ulint predecessor = pred.select(successor_rank - 1);
-      sa_graph[phi_x_inv[esa_sorted[j]]] = node;
+      sa_graph[phi_x_inv[esa_sorted[j]]] = curr_pred;
       bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first;
       bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor;
       j += 1;

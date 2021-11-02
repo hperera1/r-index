@@ -6,7 +6,7 @@
 #include "sparse_sd_vector.hpp"
 #include "sparse_hyb_vector.hpp"
 
-using namespace sdsl;
+using namespace sdsl;``
 
 // removed cycle from args because now we have the samples vector
 namespace ri {
@@ -71,7 +71,7 @@ public:
     cout << "Climbing ..." << endl;
     cout << "check 1" << endl;
     ulint start_pos = node_pos;
-    ulint start_leaf_index = calculate_d(left_most_i, start_pos);
+    ulint start_leaf_index = calculate_d(left_most_i, start_pos); // this isnt necessary because well we know the index we start at right but nice way to test calc_d for now
     cout << "check 2" << endl;
 
     // check if when we shift up we get to the root of the left subtree
