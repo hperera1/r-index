@@ -118,11 +118,18 @@ public:
       if(esa_sorted[j] < ssa[i].first) { // so long as the end sample is smaller than the start sample
         // assert(i == 0 || curr_pred <= esa_sorted[j]); // this assertion does not work because we would need to get esa_sorted[j]'s run position, not sample position
         ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
-        ulint successor = pred.select(successor_rank);
         ulint predecessor = pred.select(successor_rank - 1);
-        sa_graph[phi_x_inv[esa_sorted[j]]] = curr_pred;
-        bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first;
-        bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor;
+        ulint successor = 0;
+        if(successor_rank >= pred.number_of_1()) { // this case happens when we are getting the successor of the largest sample
+          successor = predecessor + 1; // if true, then successor is just one bigger because the cost will be 1
+        }
+        else {
+          successor = pred.select(successor_rank);
+        }
+
+        sa_graph[phi_x_inv[esa_sorted[j]]] = curr_pred; // sample -> curr_pred
+        bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first; // lower_bound
+        bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor; // upper_bound
         j += 1;
       }
       else {
@@ -132,10 +139,18 @@ public:
     }
 
     // if there are any leftover samples that need to point over to the last curr_pred that gets set, this is necessary
+    cout << "   Last graph loop ." << endl;
     while(j < esa.size()) {
       ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
-      ulint successor = pred.select(successor_rank);
       ulint predecessor = pred.select(successor_rank - 1);
+      ulint successor = 0;
+      if(successor_rank >= pred.number_of_1()) {
+        successor = predecessor + 1;
+      }
+      else {
+        successor = pred.select(successor_rank);
+      }
+
       sa_graph[phi_x_inv[esa_sorted[j]]] = curr_pred;
       bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first;
       bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor;
