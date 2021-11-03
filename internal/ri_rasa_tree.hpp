@@ -7,11 +7,10 @@
 #include "sparse_hyb_vector.hpp"
 
 using namespace sdsl;
-
-// removed cycle from args because now we have the samples vector
 namespace ri {
   template<class sparse_bv_type = sparse_sd_vector,
            class rle_string_t = rle_string_sd>
+
 class rads_tree {
 public:
   std::vector<std::pair<long long int, long long int>> tree; // nodes are pairs that represent: (edge cost, edge threshold).
@@ -69,29 +68,35 @@ public:
     // at the end we do leaf_index + the distance that was travelled to get the new sample
     // eg. start_pos = 21 -> leaf_index = 0; distance travelled = 2; leaf_index + distance travelled = 2; new_sample = leaf_samples[2] (11)
     cout << "Climbing ..." << endl;
-    cout << "check 1" << endl;
+    cout << "!pre calc_d!" << endl;
     ulint start_pos = node_pos;
     ulint start_leaf_index = calculate_d(left_most_i, start_pos); // this isnt necessary because well we know the index we start at right but nice way to test calc_d for now
-    cout << "check 2" << endl;
+    cout << "!post calc_d!" << endl;
 
     // check if when we shift up we get to the root of the left subtree
     // meaning we can skip forward to the beginning of the right subtree and descend
     if(node_pos>>(__builtin_ctzl(~node_pos)) == 2) {
+      cout << "\nSkip to the right subtree ..." << endl;
       node_pos = 3;
 
       //cost += tree[node_pos-1].first; // add cost of node that denies us | ? adding this cost is unnecessary ?
 
       descend(node_pos, cost);
       ulint distance = calculate_d(start_pos, node_pos);
+
+      cout << "leaf sample: " << leaf_samples[start_leaf_index + distance] + cost << endl;
+      cout << "distance left: " << d - distance << endl;
+
       return (std::make_pair(leaf_samples[start_leaf_index + distance] + cost, d - distance)); // return new sample and new distance
     }
 
-    cout << "check 3" << endl;
-    while((node_pos != 1) && (tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // climb up
+    cout << "!pre climb!" << endl;
+    while((node_pos != 1) && (tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // climb up while the upper_bounds let us
       node_pos = node_pos >> 1;
     }
+    cout << "!post climb!" << endl;
 
-    cout << "check 4" << endl;
+    cout << "we're at the root or we've been denied." << endl;
     cost += tree[node_pos<<1].first; // add cost of node that denies us
     node_pos = (node_pos<<1) + 1;
 
@@ -106,38 +111,48 @@ public:
     // 2. if ✓ then check your immediate sibling
     // 3. if ✕ then check left child until you get a green light
     // while((node_pos < tree.size()) && (tree[node_pos].first >= 0)) { // 1. check if we are out of bounds 2. check if there is even a node here
-    while(leaf_node_bv[node_pos]) { // while we are not at a leaf node
-      if(node_pos & 1 == 0) { // left node if good -> go to right sibling
-        if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
+    cout << "Descending ..." << endl;
+    while((node_pos < leaf_node_bv.size()) && !leaf_node_bv[node_pos]) { // while we are not at a leaf node
+      if(node_pos & 1 == 0) { // this means we are at a left child node
+        cout << "left node." << endl;
+        if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // if good -> go to right sibling
+          cout << "go to right sibling." << endl;
           cost += tree[node_pos].first;
           node_pos += 1;
         }
         else {
-          node_pos = node_pos << 1;
+          cout << "go to left child." << endl;
+          node_pos = node_pos << 1; // if not good then go to left child and check on next iteration
         }
       }
-      else { // right node if good -> go to right child
-        if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
+      else { // right node
+        cout << "right node." << endl;
+        if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // if good -> go to right child
+          cout << "go to right child." << endl;
           node_pos = (node_pos << 1) + 1;
         }
         else {
-          node_pos = node_pos << 1;
+          cout << "go to left child." << endl;
+          node_pos = node_pos << 1; // if not good then go to left child and check that guy on the next iterations
         }
       }
     }
 
-    node_pos = node_pos >> 1;
+    // cout << "node pos before shift: " << node_pos << endl;
+    // node_pos = node_pos >> 1;
+    cout << "node pos after shifts: " << node_pos << endl;
   }
 
   // calculates distance between leaf nodes start_pos and end_pos
   ulint calculate_d(ulint start_pos, ulint end_pos) {
+    cout << "\nCalculate distance between nodes ..." << endl;
     cout << "start pos: " << start_pos << ", end pos: " << end_pos << endl;
     ulint d = 0;
 
-    cout << "\nBit vector:" << endl;
-    for(int i = 0; i < leaf_node_bv.size(); i++) {
-      cout << leaf_node_bv[i] << endl;
-    }
+    // cout << "\nBit vector:" << endl;
+    // for(int i = 0; i < leaf_node_bv.size(); i++) {
+    //   cout << leaf_node_bv[i] << endl;
+    // }
 
     if(start_pos >= left_most_i) { // starting from bottom layer
       cout << "start pos >= left_most_i." << endl;
@@ -169,6 +184,7 @@ public:
       }
     }
 
+    cout << "\nd: " << d << endl;
     return d;
   }
 

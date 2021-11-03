@@ -135,6 +135,13 @@ TARGET_LINK_LIBRARIES(ri-tree-test divsufsort64)
 TARGET_LINK_LIBRARIES(ri-tree-test z)
 TARGET_LINK_LIBRARIES(ri-tree-test klib)
 
+add_executable(ri-query-rasa ri-query-rasa.cpp)
+TARGET_LINK_LIBRARIES(ri-query-rasa sdsl)
+TARGET_LINK_LIBRARIES(ri-query-rasa divsufsort)
+TARGET_LINK_LIBRARIES(ri-query-rasa divsufsort64)
+TARGET_LINK_LIBRARIES(ri-query-rasa z)
+TARGET_LINK_LIBRARIES(ri-query-rasa klib)
+
 add_executable(ri-query ri-query.cpp)
 TARGET_LINK_LIBRARIES(ri-query sdsl)
 TARGET_LINK_LIBRARIES(ri-query divsufsort)
