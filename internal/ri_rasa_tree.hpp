@@ -56,6 +56,7 @@ public:
     // when you go to a parent do not collect the money, that is if the parent has the same left most node.
     // if youre moving to a subtree where the leftmost node is not the same then we have to collect the money.
     cout << "Querying tree ..." << endl;
+    cout << "leaf_pos: " << leaf_pos << ", cost: " << cost << ", d: " << d << endl;
     return (climb(leaf_pos, cost, d));
   }
 
@@ -92,7 +93,7 @@ public:
 
     cout << "!pre climb!" << endl;
     while((node_pos != 1) && (tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // climb up while the upper_bounds let us
-      node_pos = node_pos >> 1;
+      node_pos = node_pos >> 1; 
     }
     cout << "!post climb!" << endl;
 
@@ -102,6 +103,10 @@ public:
 
     descend(node_pos, cost); // descend using new node_pos, cost, and d
     ulint distance = calculate_d(start_pos, node_pos);
+
+    cout << "leaf sample: " << leaf_samples[start_leaf_index + distance] + cost << endl;
+    cout << "distance left: " << d - distance << endl;
+
     return (std::make_pair(leaf_samples[start_leaf_index + distance] + cost, d - distance)); // return new sample and new distance
   }
 
