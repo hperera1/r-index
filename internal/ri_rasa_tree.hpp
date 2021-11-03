@@ -97,8 +97,8 @@ public:
     cout << "!pre climb!" << endl;
     while((node_pos != 1) && (tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // climb up while the upper_bounds let us
       node_pos = node_pos >> 1;
-      minimum_d_travelled = calculate_d(start_pos, (start_pos * shifts) + 1);
-      maximum_d_travelled = calculate_d(star)
+      // minimum_d_travelled = calculate_d(start_pos, (start_pos * shifts) + 1);
+      // maximum_d_travelled = calculate_d(star)
     }
     cout << "!post climb!" << endl;
 
