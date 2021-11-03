@@ -91,9 +91,14 @@ public:
       return (std::make_pair(leaf_samples[start_leaf_index + distance] + cost, d - distance)); // return new sample and new distance
     }
 
+    ulint minimum_d_travelled = 0;
+    ulint maximum_d_travelled = 0;
+    ulint shifts = 0;
     cout << "!pre climb!" << endl;
     while((node_pos != 1) && (tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // climb up while the upper_bounds let us
-      node_pos = node_pos >> 1; 
+      node_pos = node_pos >> 1;
+      minimum_d_travelled = calculate_d(start_pos, (start_pos * shifts) + 1);
+      maximum_d_travelled = calculate_d(star)
     }
     cout << "!post climb!" << endl;
 
@@ -154,11 +159,12 @@ public:
     cout << "start pos: " << start_pos << ", end pos: " << end_pos << endl;
     ulint d = 0;
 
-    // cout << "\nBit vector:" << endl;
-    // for(int i = 0; i < leaf_node_bv.size(); i++) {
-    //   cout << leaf_node_bv[i] << endl;
-    // }
+    cout << "\nBit vector:" << endl;
+    for(int i = 0; i < leaf_node_bv.size(); i++) {
+      cout << leaf_node_bv[i] << endl;
+    }
 
+    cout << "\nbv size: " << leaf_node_bv.size() << endl;
     if(start_pos >= left_most_i) { // starting from bottom layer
       cout << "start pos >= left_most_i." << endl;
       if(end_pos >= left_most_i) { // going to bottom layer bot->bot
