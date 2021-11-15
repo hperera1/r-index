@@ -17,17 +17,41 @@ public:
   std::vector<ulint> leaf_samples; // actual sa sample values represented by run index
   sparse_bv_type leaf_node_bv; // bv telling us which node is a leaf node
   uint left_most_i;
+  ulint height;
 
   rads_tree(){};
   rads_tree(std::vector<ulint> &cycle, std::vector<std::pair<ulint, ulint>> &bounds, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers){
+    // cout << "tree constructor." << endl;
     size_t n = cycle.size(); // path size
+    height = ceil(log2(n)); // height of the tree
     leaf_samples = cycle; // store the samples in the cycle
-    tree = std::vector<std::pair<long long int, long long int>>((size_t)1<<(size_t)(ceil(log2(n)) + 1), std::make_pair(-1,0)); // tree size initialization, default the costs to -1
+    tree = std::vector<std::pair<long long int, long long int>>((size_t)1<<(size_t)(height + 1), std::make_pair(-1,0)); // tree size initialization, default the costs to -1
     auto temp_leaf_bv = vector<bool>(tree.size(), false);
 
     constructor_helper(bounds, 1, 0, n-1, tree_num, tree_pointers, temp_leaf_bv);
     leaf_node_bv = sparse_bv_type(temp_leaf_bv);
     left_most_i = (tree.size()>>1);
+  }
+
+  rads_tree(const rads_tree &rads_tree_) {
+    this->tree = rads_tree_.tree;
+    this->leaf_samples = rads_tree_.leaf_samples;
+    this->leaf_node_bv = rads_tree_.leaf_node_bv;
+    this->left_most_i = rads_tree_.left_most_i;
+    this->height = rads_tree_.height;
+  }
+
+  rads_tree(rads_tree &&rads_tree_) {
+    this.tree = rads_tree_.tree;
+    this.leaf_samples = rads_tree_.leaf_samples;
+    this.leaf_node_bv = rads_tree_.leaf_node_bv;
+    this.left_most_i = rads_tree_.left_most_i;
+    this.height = rads_tree_.height;
+    rads_tree_.tree = NULL;
+    rads_tree_.leaf_samples = NULL;
+    rads_tree_.leaf_node_bv = NULL;
+    rads_tree_.left_most_i = NULL;
+    rads_tree_.height = NULL;
   }
 
   // so many arguments...
@@ -69,10 +93,8 @@ public:
     // at the end we do leaf_index + the distance that was travelled to get the new sample
     // eg. start_pos = 21 -> leaf_index = 0; distance travelled = 2; leaf_index + distance travelled = 2; new_sample = leaf_samples[2] (11)
     cout << "Climbing ..." << endl;
-    cout << "!pre calc_d!" << endl;
+    ulint current_height = height; // we always enter at a leaf node so we are at level with the height of the tree
     ulint start_pos = node_pos;
-    ulint start_leaf_index = calculate_d(left_most_i, start_pos); // this isnt necessary because well we know the index we start at right but nice way to test calc_d for now
-    cout << "!post calc_d!" << endl;
 
     // check if when we shift up we get to the root of the left subtree
     // meaning we can skip forward to the beginning of the right subtree and descend
@@ -80,39 +102,50 @@ public:
       cout << "\nSkip to the right subtree ..." << endl;
       node_pos = 3;
 
-      //cost += tree[node_pos-1].first; // add cost of node that denies us | ? adding this cost is unnecessary ?
+      // cost += tree[node_pos-1].first; // add cost of node that denies us | ? adding this cost is unnecessary ?
 
       descend(node_pos, cost);
       ulint distance = calculate_d(start_pos, node_pos);
 
-      cout << "leaf sample: " << leaf_samples[start_leaf_index + distance] + cost << endl;
+      cout << "leaf sample: " << leaf_samples[start_pos + distance] + cost << endl;
       cout << "distance left: " << d - distance << endl;
 
-      return (std::make_pair(leaf_samples[start_leaf_index + distance] + cost, d - distance)); // return new sample and new distance
+      return (std::make_pair(leaf_samples[start_pos + distance] + cost, d - distance)); // return new sample and new distance
     }
 
-    ulint minimum_d_travelled = 0;
-    ulint maximum_d_travelled = 0;
+    // ulint minimum_d_travelled = 0;
+    ulint max_d_travelled = 0;
     ulint shifts = 0;
     cout << "!pre climb!" << endl;
-    while((node_pos != 1) && (tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // climb up while the upper_bounds let us
+    // climb up while the upper_bounds let us
+    while((node_pos != 1) && (tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) {
+      if((d - max_d_travelled) > 0) { // this means that the sample we are looking for is in the current interval that we are covering
+        // if this is true then we should start descending from this node
+        cost += tree[node_pos << 1].first; // add cost of node that denies us
+        node_pos = (node_pos << 1) + 1; // move node_pos to the right child of the current node
+        descend(node_pos, cost);
+        ulint distance = calculate_d(start_pos, node_pos);
+        return (std::make_pair(leaf_samples[start_pos + distance] + cost, d - distance)); // return new sample and new distance
+      }
+
       node_pos = node_pos >> 1;
-      // minimum_d_travelled = calculate_d(start_pos, (start_pos * shifts) + 1);
-      // maximum_d_travelled = calculate_d(star)
+      current_height -= 1;
+      max_d_travelled = calculate_d(start_pos, ((node_pos << (height - current_height)) + ((1 << (height - current_height)) - 1)));
+      cout << "max_d_travelled: " << max_d_travelled << endl;
     }
     cout << "!post climb!" << endl;
 
-    cout << "we're at the root or we've been denied." << endl;
-    cost += tree[node_pos<<1].first; // add cost of node that denies us
-    node_pos = (node_pos<<1) + 1;
+    cout << "\nwe're at the root or we've been denied." << endl;
+    cost += tree[node_pos << 1].first; // add cost of node that denies us
+    node_pos = (node_pos << 1) + 1; // move node_pos to the right child of the current node
 
     descend(node_pos, cost); // descend using new node_pos, cost, and d
     ulint distance = calculate_d(start_pos, node_pos);
 
-    cout << "leaf sample: " << leaf_samples[start_leaf_index + distance] + cost << endl;
+    cout << "leaf sample: " << leaf_samples[start_pos + distance] + cost << endl;
     cout << "distance left: " << d - distance << endl;
 
-    return (std::make_pair(leaf_samples[start_leaf_index + distance] + cost, d - distance)); // return new sample and new distance
+    return (std::make_pair(leaf_samples[start_pos + distance] + cost, d - distance)); // return new sample and new distance
   }
 
   // during the descent the node_pos gets shifted around so that calculate_d can do its job
@@ -155,42 +188,42 @@ public:
 
   // calculates distance between leaf nodes start_pos and end_pos
   ulint calculate_d(ulint start_pos, ulint end_pos) {
-    cout << "\nCalculate distance between nodes ..." << endl;
-    cout << "start pos: " << start_pos << ", end pos: " << end_pos << endl;
+    // cout << "\nCalculate distance between nodes ..." << endl;
+    // cout << "start pos: " << start_pos << ", end pos: " << end_pos << endl;
     ulint d = 0;
 
-    cout << "\nBit vector:" << endl;
-    for(int i = 0; i < leaf_node_bv.size(); i++) {
-      cout << leaf_node_bv[i] << endl;
-    }
+    // cout << "\nBit vector:" << endl;
+    // for(int i = 0; i < leaf_node_bv.size(); i++) {
+    //   cout << leaf_node_bv[i] << endl;
+    // }
 
-    cout << "\nbv size: " << leaf_node_bv.size() << endl;
+    // cout << "\nbv size: " << leaf_node_bv.size() << endl;
     if(start_pos >= left_most_i) { // starting from bottom layer
-      cout << "start pos >= left_most_i." << endl;
+      // cout << "start pos >= left_most_i." << endl;
       if(end_pos >= left_most_i) { // going to bottom layer bot->bot
-        cout << "end_pos >= left_most_i" << endl;
-        cout << "end pos rank" << endl;
+        // cout << "end_pos >= left_most_i" << endl;
+        // cout << "end pos rank" << endl;
         d += leaf_node_bv.rank(end_pos);
-        cout << "start pos rank" << endl;
+        // cout << "start pos rank" << endl;
         d -= leaf_node_bv.rank(start_pos);
-        cout << "start pos shift rank" << endl;
+        // cout << "start pos shift rank" << endl;
         d -= leaf_node_bv.rank((start_pos>>1));
-        cout << "end pos shift rank" << endl;
+        // cout << "end pos shift rank" << endl;
         d += leaf_node_bv.rank((end_pos>>1));
       }
       else { // going to top layer bot->top
-        cout << "endpos < left_most_i" << endl;
+        // cout << "endpos < left_most_i" << endl;
         d += leaf_node_bv.rank(end_pos) - leaf_node_bv.rank(start_pos) - leaf_node_bv.rank((start_pos>>1)) + leaf_node_bv.rank((end_pos<<1));
       }
     }
     else { // starting from top layer
-      cout << "start pos < left_most_i" << endl;
+      // cout << "start pos < left_most_i" << endl;
       if(end_pos >= left_most_i) {// going to bottom layer top->bot
-        cout << "end pos >= left_most_i" << endl;
+        // cout << "end pos >= left_most_i" << endl;
         d += leaf_node_bv.rank(end_pos) - leaf_node_bv.rank(start_pos) - leaf_node_bv.rank((start_pos<<1)) + leaf_node_bv.rank((end_pos>>1));
       }
       else { // going to top layer top->top
-        cout << "end pos < left_most_i" << endl;
+        // cout << "end pos < left_most_i" << endl;
         d += leaf_node_bv.rank(end_pos) - leaf_node_bv.rank(start_pos) - leaf_node_bv.rank((start_pos<<1)) + leaf_node_bv.rank((end_pos<<1));
       }
     }
