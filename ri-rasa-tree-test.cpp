@@ -57,5 +57,5 @@ int main(int argc, char** argv) {
   // }
 
   cout << "\nTrying a regular query ..." << endl;
-  trees[1].query(8, 0, 3);
+  trees[1].query(8, 0, 7);
 }
