@@ -206,10 +206,9 @@ public:
     bounds.clear();
   }
 
-  // sa_i is what we are querying
+  // sa_i is what we want to find
   // we can change std::vector<int> esa to int_vector<> esa (r_index copies samples_last_vec to samples_last)
   void query(ulint sa_i, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &sa) {
-    // should we do some assertions like phi does?
     // pass pred into the query helper
     // is pred in a cycle -> bv check
     // if so use tree, else use phi
@@ -223,17 +222,19 @@ public:
     cout << "run l: " << run_l << endl;
     cout << "sample: " << sa_j << endl;
 
-    helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, sa);
+    helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, sa); // after helper_query, sa_j will be the
   }
 
   // args: sa_j & d (j-i) | returns: what do we need to return? just d?
   void helper_query(ulint &sa_j, ulint d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &sa) {
-    cout << "distance: " << d << endl;
+    ulint sa_jr;
+    ulint sa_prime;
+    ulint cost;
 
     while(d > 0) {
-      ulint sa_jr = pred.predecessor_rank_circular(sa_j); // start sample predecessor
-      ulint sa_prime = pred.select(sa_jr); // actual predecessor value of sa_j
-      ulint cost = sa_j - sa_prime; // difference between end sample and predecessor
+      sa_jr = pred.predecessor_rank_circular(sa_j); // sample predecessor run
+      sa_prime = pred.select(sa_jr); // actual predecessor of sa_j
+      cost = sa_j - sa_prime; // distance between sample and predecessor
 
       cout << "sa_jr: " << sa_jr << endl;
       cout << "sa_prime: " << sa_prime << endl;
@@ -245,14 +246,16 @@ public:
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)];
         cout << "sample run: " << std::get<0>(tree_info) << ", sample tree: " << std::get<1>(tree_info) << ", sample leaf: " << std::get<2>(tree_info) << endl;
         std::pair<ulint, ulint> sa_prime_and_d = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
+        // sa_prime is the new sample (leaf) that we got from the tree.
 
-        sa_j = pred_to_run[sa_prime_and_d.first]; // review these two
-        d = d - sa_prime_and_d.second;
+        sa_j = sa_prime_and_d.first; // review these two // sa_j is sa_primes run.
+        d = d - sa_prime_and_d.second; // this is the distance left over.
       }
       else { // continue the iteration using phi
-        ulint delta = sa_prime<sa_j ? sa_j-sa_prime : sa_j+1;
-        ulint prev_sample = sa[ pred_to_run[sa_jr]-1 ]; // we dont have samples_last, need to pass it in.
+        ulint delta = sa_prime < sa_j ? sa_j - sa_prime : sa_j + 1;
+        ulint prev_sample = sa[pred_to_run[sa_jr] - 1]; // we dont have samples_last, need to pass it in.
         sa_j = (prev_sample + delta) % bwt.size();
+        d -= 1;
       }
     }
   }

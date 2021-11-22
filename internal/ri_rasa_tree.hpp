@@ -106,7 +106,7 @@ public:
       cout << "leaf sample: " << leaf_samples[start_pos + distance] + cost << endl;
       cout << "distance left: " << d - distance << endl;
 
-      return (std::make_pair(leaf_samples[start_pos + distance] + cost, d - distance)); // return new sample and new distance
+      return (std::make_pair(leaf_samples[start_pos - left_most_i + distance], distance)); // return new sample and new distance
     }
 
     ulint shifts = 0;
@@ -124,7 +124,7 @@ public:
         current_height += 1;
         descend(start_pos, node_pos, cost, d, current_height);
         ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
-        return (std::make_pair(leaf_samples[start_pos + distance] + cost, d - distance)); // return new sample and new distance
+        return (std::make_pair(leaf_samples[start_pos - left_most_i + distance], distance)); // return new sample and new distance
       }
 
       node_pos = node_pos >> 1;
@@ -140,12 +140,14 @@ public:
     node_pos = (node_pos << 1) + 1; // move node_pos to the right child of the current node
     descend(start_pos, node_pos, cost, d, current_height); // descend using new node_pos, cost, and d
     ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
+    cout << "final distance calc: " << distance << endl;
 
     // this doesn't work. probably simple fix cause i'm tired and can't tell
-    cout << "leaf sample: " << leaf_samples[start_pos + distance] + cost << endl;
+    cout << "leaf sample: " << leaf_samples[start_pos - left_most_i + distance] << endl;
+    cout << "start pos: " << start_pos << endl;
     cout << "distance left: " << d - distance << endl;
 
-    return (std::make_pair(leaf_samples[start_pos + distance] + cost, d - distance)); // return new sample and new distance
+    return (std::make_pair(leaf_samples[start_pos + distance], distance)); // return new sample and new distance
   }
 
   // during the descent the node_pos gets shifted around so that calculate_d can do its job
