@@ -11,13 +11,14 @@ namespace ri {
   template<class sparse_bv_type = sparse_sd_vector,
            class rle_string_t = rle_string_sd>
 
+//! Tree data structure that stores the samples contained within a cycle. Performs queries.
 class rads_tree {
 public:
   std::vector<std::pair<long long int, long long int>> tree; // nodes are pairs that represent: (edge cost, edge threshold).
   std::vector<ulint> leaf_samples; // actual sa sample values represented by run index
   sparse_bv_type leaf_node_bv; // bv telling us which node is a leaf node
-  uint left_most_i;
-  ulint height;
+  uint left_most_i; // index at which the left most leaf is stored
+  ulint height; // height of the tree starting at 0
 
   rads_tree(){};
   rads_tree(std::vector<ulint> &cycle, std::vector<std::pair<ulint, ulint>> &bounds, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers) {
@@ -53,7 +54,6 @@ public:
     rads_tree_.height = NULL;
   }
 
-  // so many arguments...
   // recursively constructs a balanced binary tree from the leaves up to the root.
   void constructor_helper(std::vector<std::pair<ulint, ulint>> &bounds, size_t node, size_t begin, size_t end, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers, std::vector<bool> &leaf_bv) {
     size_t mid = (begin + end)/2;
@@ -71,8 +71,7 @@ public:
     tree[node].second = std::min(tree[2*node].second, tree[2*node+1].second - tree[2*node].first); // edge threshold
   }
 
-  // args: leaf_pos, cost, d | returns: returns new sample and distance left
-  //                           (sa', d)
+  // args: leaf_pos, cost, d | returns: returns new sample index and distance travelled (sa', d)
   std::pair<ulint, ulint> query(ulint leaf_pos, uint cost, uint d) {
     // begin climbing the tree and only collect when we go to a sibling.
     // when you go to a parent do not collect the money, that is if the parent has the same left most node.
@@ -151,12 +150,11 @@ public:
   }
 
   // during the descent the node_pos gets shifted around so that calculate_d can do its job
-  // args: node_pos: current node_pos, cost: cumulated cost, d: distance of where we came in from to the sample we're looking for
+  // args: node_pos: current node_pos, cost: cumulated cost, d: distance of where we came in from to the sample we're looking for.
   void descend(ulint start_pos, ulint &node_pos, uint &cost, uint d, ulint current_height) {
     // 1. check node_pos that is passed in
     // 2. if YAY then check your immediate sibling
     // 3. if NAY then check left child until you get a green light
-    // while((node_pos < tree.size()) && (tree[node_pos].first >= 0)) { // 1. check if we are out of bounds 2. check if there is even a node here
     cout << "\nDescending ..." << endl;
     cout << "start pos: " << start_pos << endl;
     cout << "node pos: " << node_pos << endl;
@@ -224,7 +222,7 @@ public:
     cout << "node pos after shifts: " << node_pos << endl;
   }
 
-  // calculates distance between leaf nodes start_pos and end_pos
+  // calculates the distance between leaf nodes: start_pos and end_pos. distance meaning the number of leaf nodes between these two indices.
   ulint calculate_d(ulint start_pos, ulint end_pos) {
     ulint d = 0;
 
