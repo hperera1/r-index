@@ -10,7 +10,6 @@ using namespace sdsl;
 namespace ri {
   template<class sparse_bv_type = sparse_sd_vector,
            class rle_string_t = rle_string_sd>
-
 //! Tree data structure that stores the samples contained within a cycle. Performs queries.
 class rads_tree {
 public:
@@ -41,12 +40,35 @@ public:
     this->height = rads_tree_.height;
   }
 
+  // rads_tree(rads_tree &&rads_tree_) noexcept
+  // : tree(move(rads_tree_.tree))
+  // , leaf_samples(move(rads_tree_.leaf_samples))
+  // , leaf_node_bv(move(rads_tree_.leaf_node_bv))
+  // , left_most_i(move(rads_tree_.left_most_i))
+  // , height(move(rads_tree_.height))
+  // {
+  //   cout << "MOVE CONSTRUCTOR USED" << endl;
+  // }
+  //
+  // rads_tree& operator=(const rads_tree &rads_tree_) {
+  //   return *this = rads_tree(rads_tree_);
+  // }
+  //
+  // rads_tree& operator=(rads_tree &&rads_tree_) noexcept {
+  //   swap(tree, rads_tree_.tree);
+  //   swap(leaf_samples, rads_tree_.leaf_samples);
+  //   swap(leaf_node_bv, rads_tree_.leaf_node_bv);
+  //   swap(left_most_i, rads_tree_.left_most_i);
+  //   swap(height, rads_tree_.height);
+  //   return *this;
+  // }
+
   rads_tree(rads_tree &&rads_tree_) {
-    this.tree = rads_tree_.tree;
-    this.leaf_samples = rads_tree_.leaf_samples;
-    this.leaf_node_bv = rads_tree_.leaf_node_bv;
-    this.left_most_i = rads_tree_.left_most_i;
-    this.height = rads_tree_.height;
+    this->tree = rads_tree_.tree;
+    this->leaf_samples = rads_tree_.leaf_samples;
+    this->leaf_node_bv = rads_tree_.leaf_node_bv;
+    this->left_most_i = rads_tree_.left_most_i;
+    this->height = rads_tree_.height;
     rads_tree_.tree = NULL;
     rads_tree_.leaf_samples = NULL;
     rads_tree_.leaf_node_bv = NULL;
@@ -84,7 +106,7 @@ public:
   // climbing conditions
   // 1. node is non-negative
   // 2. cost does not exceed nodes threshold
-  std::pair<ulint, ulint> climb(ulint &node_pos, uint &cost, uint d) {
+  std::pair<ulint, ulint> climb(ulint node_pos, uint &cost, uint d) {
     // this provides us with the index of the sample that is being used to query
     // left_most_i is 0 and we get the distance from our start_pos
     // at the end we do leaf_index + the distance that was travelled to get the new sample
@@ -92,6 +114,10 @@ public:
     cout << "Climbing ..." << endl;
     ulint current_height = height; // we always enter at a leaf node so we are at level with the height of the tree
     ulint start_pos = node_pos;
+
+    if((node_pos << 1) < tree.size()) { // this means that we are actually at height - 1.
+      current_height -= 1;
+    }
 
     // check if when we shift up we get to the root of the left subtree
     // meaning we can skip forward to the beginning of the right subtree and descend
@@ -129,7 +155,10 @@ public:
       node_pos = node_pos >> 1;
       cout << "\nnew node pos: " << node_pos << endl;
       current_height -= 1;
-      max_d_travelled = (int) calculate_d(start_pos, ((node_pos << (height - current_height)) + ((1 << (height - current_height)) - 1))); // (node_pos gets shifted by the distance to the leaves) + (1 shifted that many times left - 1)
+      ulint max_node_pos = ((node_pos << (height - current_height)) + ((1 << (height - current_height)) - 1));
+      cout << "start: " << start_pos << " max: " << max_node_pos << endl;
+      ulint max_d = this->calculate_d(start_pos, max_node_pos); // (node_pos gets shifted by the distance to the leaves) + (1 shifted that many times left - 1)
+      max_d_travelled = (int) max_d;
       cout << "max_d_travelled: " << max_d_travelled << endl;
     }
 
@@ -146,7 +175,7 @@ public:
     cout << "start pos: " << start_pos << endl;
     cout << "distance left: " << d - distance << endl;
 
-    return (std::make_pair(leaf_samples[start_pos + distance], distance)); // return new sample and new distance
+    return (std::make_pair(leaf_samples[start_pos - left_most_i + distance], distance)); // return new sample and new distance
   }
 
   // during the descent the node_pos gets shifted around so that calculate_d can do its job
@@ -175,7 +204,8 @@ public:
         if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // if good -> go to right sibling
           cout << "go to right sibling." << endl;
           node_pos += 1;
-          min_d_travelled = (int) calculate_d(start_pos, (node_pos << (height - current_height)));
+          ulint min_node = (node_pos << (height - current_height));
+          min_d_travelled = (int) calculate_d(start_pos, min_node);
           if(((int) d - min_d_travelled) < 0) {
             cout << "we've gone too far. go to left sib right child." << endl;
             node_pos -= 1;
@@ -200,7 +230,8 @@ public:
           cout << "go to right child." << endl;
           current_height += 1;
           node_pos = (node_pos << 1) + 1;
-          min_d_travelled = (int) calculate_d(start_pos, (node_pos << (height - current_height)));
+          ulint min_node = (node_pos << (height - current_height));
+          min_d_travelled = (int) calculate_d(start_pos, min_node);
           if(((int) d - min_d_travelled) < 0) {
             cout << "right child doesn't have sample. go to left child." << endl;
             node_pos -= 1;
@@ -214,7 +245,8 @@ public:
       }
     }
 
-    int min_d_travelled = (int) calculate_d(start_pos, (node_pos << (height - current_height)));
+    ulint min_node = (node_pos << (height - current_height));
+    int min_d_travelled = (int) calculate_d(start_pos, min_node);
     if(((int) d - min_d_travelled) < 0) {
       node_pos -= 1;
     }
@@ -225,6 +257,8 @@ public:
   // calculates the distance between leaf nodes: start_pos and end_pos. distance meaning the number of leaf nodes between these two indices.
   ulint calculate_d(ulint start_pos, ulint end_pos) {
     ulint d = 0;
+    cout << "start: " << start_pos << endl;
+    cout << "end: " << end_pos << endl;
 
     if(start_pos >= left_most_i) { // starting from bottom layer
       if(end_pos >= left_most_i) { // going to bottom layer bot->bot
@@ -259,24 +293,11 @@ public:
     return d;
   }
 
-  void print_array() {
-    cout << "Printing array ..." << endl;
+  void print_tree() {
+    cout << "tree bounds: ";
     for (size_t i = 0; i < tree.size(); i++) {
-      cout << "(" << tree[i].first << ", " << tree[i].second << ") ";
+      cout << "[" << tree[i].first << "," << tree[i].second << "] ";
     }
-
-    cout << endl;
-    int leaf_counter = 0;
-    for (size_t i = 0; i < leaf_node_bv.size(); i++) {
-      if(leaf_node_bv[i]) {
-        cout << " 1,";
-        leaf_counter++;
-      }
-      else {
-        cout << " -,";
-      }
-    }
-    cout << endl;
   }
 };
 }

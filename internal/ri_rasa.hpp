@@ -33,6 +33,26 @@ public:
     cout << "Largest tree: " << this->get_largest_tree() << endl;
   }
 
+  rads(const rads &other_rads) {
+    this->sa_map = other_rads.sa_map;
+    this->phi_x_inv = other_rads.phi_x_inv;
+    this->trees = other_rads.trees;
+    this->tree_pointers = other_rads.tree_pointers;
+    this->bounds = other_rads.bounds;
+    this->sa_graph = other_rads.sa_graph;
+    this->trees_bv = other_rads.trees_bv;
+  }
+
+  rads(rads &&other_rads)
+  : sa_map(move(other_rads.sa_map))
+  , phi_x_inv(move(other_rads.phi_x_inv))
+  , trees(move(other_rads.trees))
+  , tree_pointers(move(other_rads.tree_pointers))
+  , bounds(move(other_rads.bounds))
+  , sa_graph(move(other_rads.sa_graph))
+  , trees_bv(move(other_rads.trees_bv))
+  {}
+
   // TO-DO for both constructions: how to make efficient?
   // construction for phi_inverse
   // unsorted_ssa: samples_first before sort | ssa: sorted samples_first (post phi) | esa: samples_last | pred: predecessor data structure used to calculate successors and preds
