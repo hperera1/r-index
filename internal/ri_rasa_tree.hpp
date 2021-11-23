@@ -33,6 +33,7 @@ public:
   }
 
   rads_tree(const rads_tree &rads_tree_) {
+    cout << "COPY CONSTRUCTOR CALLED" << endl;
     this->tree = rads_tree_.tree;
     this->leaf_samples = rads_tree_.leaf_samples;
     this->leaf_node_bv = rads_tree_.leaf_node_bv;
@@ -40,20 +41,20 @@ public:
     this->height = rads_tree_.height;
   }
 
-  // rads_tree(rads_tree &&rads_tree_) noexcept
-  // : tree(move(rads_tree_.tree))
-  // , leaf_samples(move(rads_tree_.leaf_samples))
-  // , leaf_node_bv(move(rads_tree_.leaf_node_bv))
-  // , left_most_i(move(rads_tree_.left_most_i))
-  // , height(move(rads_tree_.height))
-  // {
-  //   cout << "MOVE CONSTRUCTOR USED" << endl;
-  // }
-  //
+  rads_tree(rads_tree &&rads_tree_) noexcept
+  : tree(move(rads_tree_.tree))
+  , leaf_samples(move(rads_tree_.leaf_samples))
+  , leaf_node_bv(move(rads_tree_.leaf_node_bv))
+  , left_most_i(move(rads_tree_.left_most_i))
+  , height(move(rads_tree_.height))
+  {
+    cout << "MOVE CONSTRUCTOR USED" << endl;
+  }
+
   // rads_tree& operator=(const rads_tree &rads_tree_) {
   //   return *this = rads_tree(rads_tree_);
   // }
-  //
+
   // rads_tree& operator=(rads_tree &&rads_tree_) noexcept {
   //   swap(tree, rads_tree_.tree);
   //   swap(leaf_samples, rads_tree_.leaf_samples);
@@ -63,18 +64,19 @@ public:
   //   return *this;
   // }
 
-  rads_tree(rads_tree &&rads_tree_) {
-    this->tree = rads_tree_.tree;
-    this->leaf_samples = rads_tree_.leaf_samples;
-    this->leaf_node_bv = rads_tree_.leaf_node_bv;
-    this->left_most_i = rads_tree_.left_most_i;
-    this->height = rads_tree_.height;
-    rads_tree_.tree = NULL;
-    rads_tree_.leaf_samples = NULL;
-    rads_tree_.leaf_node_bv = NULL;
-    rads_tree_.left_most_i = NULL;
-    rads_tree_.height = NULL;
-  }
+  // bad creates problems
+  // rads_tree(rads_tree &&rads_tree_) {
+  //   this->tree = rads_tree_.tree;
+  //   this->leaf_samples = rads_tree_.leaf_samples;
+  //   this->leaf_node_bv = rads_tree_.leaf_node_bv;
+  //   this->left_most_i = rads_tree_.left_most_i;
+  //   this->height = rads_tree_.height;
+  //   rads_tree_.tree = NULL;
+  //   rads_tree_.leaf_samples = NULL;
+  //   rads_tree_.leaf_node_bv = NULL;
+  //   rads_tree_.left_most_i = NULL;
+  //   rads_tree_.height = NULL;
+  // }
 
   // recursively constructs a balanced binary tree from the leaves up to the root.
   void constructor_helper(std::vector<std::pair<ulint, ulint>> &bounds, size_t node, size_t begin, size_t end, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers, std::vector<bool> &leaf_bv) {
@@ -157,7 +159,7 @@ public:
       current_height -= 1;
       ulint max_node_pos = ((node_pos << (height - current_height)) + ((1 << (height - current_height)) - 1));
       cout << "start: " << start_pos << " max: " << max_node_pos << endl;
-      ulint max_d = this->calculate_d(start_pos, max_node_pos); // (node_pos gets shifted by the distance to the leaves) + (1 shifted that many times left - 1)
+      ulint max_d = calculate_d(start_pos, max_node_pos); // (node_pos gets shifted by the distance to the leaves) + (1 shifted that many times left - 1)
       max_d_travelled = (int) max_d;
       cout << "max_d_travelled: " << max_d_travelled << endl;
     }

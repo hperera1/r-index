@@ -82,6 +82,21 @@ public:
 
 	}
 
+	sparse_sd_vector(const sparse_sd_vector &other) {
+		u = other.u;
+		sdv = other.sdv;
+		rank1 = sd_vector<>::rank_1_type(&sdv);
+		select1 = sd_vector<>::select_1_type(&sdv);
+	}
+
+	sparse_sd_vector(sparse_sd_vector &&other)
+	: u(std::move(other.u))
+	, sdv(std::move(other.sdv))
+	{
+		rank1 = sd_vector<>::rank_1_type(&sdv);
+		select1 = sd_vector<>::select_1_type(&sdv);
+	}
+
 	sparse_sd_vector & operator= (const sparse_sd_vector & other) {
 
 		u = other.sdv.size();
