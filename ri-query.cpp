@@ -173,10 +173,14 @@ void run(string filename, string esaFilename, ulint numSamples, uint sa_n) {
   generateSamples(querySamples, numSamples, idx);
 
   if(numSamples == 0) { // 0 means we query the whole index but if followed by a nonzero integer we query that value.
-    if(sa_n == 0)
+    if(sa_n == 0) {
+      cout << "sa all!" << endl;
       SA_all(esaFilename, idx);
-    else
+    }
+    else {
+      cout << "sa n!" << endl;
       SA_n(esaFilename, idx, sa_n);
+    }
   }
   else {
     SA(querySamples, esaFilename, idx);

@@ -275,19 +275,32 @@ public:
         cout << "\nwere in a cycle ..." << endl;
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)];
         cout << "sample run: " << std::get<0>(tree_info) << ", sample tree: " << std::get<1>(tree_info) << ", sample leaf: " << std::get<2>(tree_info) << endl;
-        std::pair<ulint, ulint> sa_prime_and_d = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
+        trees[std::get<1>(tree_info)].print_debug_info();
+        trees[std::get<1>(tree_info)].print_tree();
+        trees[std::get<1>(tree_info)].print_samples();
+        std::tuple<ulint, ulint, ulint> sa_prime_d_cost = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d); // tuple containing new sample run, distance travelled, and cost accumulated
         // sa_prime is the new sample (leaf) that we got from the tree.
 
-        sa_j = sa[sa_prime_and_d.first]; // review these two // sa_j is being set as the new sample
-        d = d - sa_prime_and_d.second; // this is the distance left over.
+        cout << "sa_prime: " << std::get<0>(sa_prime_d_cost) << endl;
+        cout << "d: " << std::get<1>(sa_prime_d_cost) << endl;
+        cout << "cost: " << std::get<2>(sa_prime_d_cost) << endl;
+
+        run = std::get<0>(sa_prime_d_cost);
+        sa_j = sa[std::get<0>(sa_prime_d_cost)] + std::get<2>(sa_prime_d_cost); // review these two // sa_j is being set as the new sample
+        cout << "new sa_j: " << sa_j << endl;
+        d = d - std::get<1>(sa_prime_d_cost); // this is the distance left over.
+        cout << "new d: " << d << endl;
       }
       else { // continue the iteration using phi
+        cout << "\nphi iteration ..." << endl;
         ulint delta = sa_prime < sa_j ? sa_j - sa_prime : sa_j + 1;
         ulint prev_sample = sa[pred_to_run[sa_jr] - 1]; // we dont have samples_last, need to pass it in.
         sa_j = (prev_sample + delta) % bwt.size();
         d -= 1;
       }
     }
+
+    cout << "sa_j: " << sa_j << endl;
   }
 
   bool in_cycle(ulint sa) {

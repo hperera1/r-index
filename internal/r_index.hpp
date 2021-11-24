@@ -151,10 +151,11 @@ public:
 
         cout << "(3.5/3) Building rads ..." << endl;
         rads rads_ds = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
+        rads_ds.print_tree_runs(unsorted_samples_first_vec, 0, 10);
 
         cout << "(4/3) Query tests ..." << endl;
         cout << "Trying to find sa_i = 6 ..." << endl;
-        rads_ds.query(6, bwt, pred_to_run, pred, samples_last_vec); // how would i use samples_last, its a bit_vector right?
+        cout << "query result: " << rads_ds.query(6, bwt, pred_to_run, pred, samples_last_vec) << endl;
     }
 
     void from_bwt(std::string fname) {

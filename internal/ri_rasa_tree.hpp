@@ -33,7 +33,6 @@ public:
   }
 
   rads_tree(const rads_tree &rads_tree_) {
-    cout << "COPY CONSTRUCTOR CALLED" << endl;
     this->tree = rads_tree_.tree;
     this->leaf_samples = rads_tree_.leaf_samples;
     this->leaf_node_bv = rads_tree_.leaf_node_bv;
@@ -47,9 +46,7 @@ public:
   , leaf_node_bv(move(rads_tree_.leaf_node_bv))
   , left_most_i(move(rads_tree_.left_most_i))
   , height(move(rads_tree_.height))
-  {
-    cout << "MOVE CONSTRUCTOR USED" << endl;
-  }
+  {}
 
   // rads_tree& operator=(const rads_tree &rads_tree_) {
   //   return *this = rads_tree(rads_tree_);
@@ -62,20 +59,6 @@ public:
   //   swap(left_most_i, rads_tree_.left_most_i);
   //   swap(height, rads_tree_.height);
   //   return *this;
-  // }
-
-  // bad creates problems
-  // rads_tree(rads_tree &&rads_tree_) {
-  //   this->tree = rads_tree_.tree;
-  //   this->leaf_samples = rads_tree_.leaf_samples;
-  //   this->leaf_node_bv = rads_tree_.leaf_node_bv;
-  //   this->left_most_i = rads_tree_.left_most_i;
-  //   this->height = rads_tree_.height;
-  //   rads_tree_.tree = NULL;
-  //   rads_tree_.leaf_samples = NULL;
-  //   rads_tree_.leaf_node_bv = NULL;
-  //   rads_tree_.left_most_i = NULL;
-  //   rads_tree_.height = NULL;
   // }
 
   // recursively constructs a balanced binary tree from the leaves up to the root.
@@ -96,7 +79,7 @@ public:
   }
 
   // args: leaf_pos, cost, d | returns: returns new sample index and distance travelled (sa', d)
-  std::pair<ulint, ulint> query(ulint leaf_pos, uint cost, uint d) {
+  std::tuple<ulint, ulint, ulint> query(ulint leaf_pos, uint cost, uint d) {
     // begin climbing the tree and only collect when we go to a sibling.
     // when you go to a parent do not collect the money, that is if the parent has the same left most node.
     // if youre moving to a subtree where the leftmost node is not the same then we have to collect the money.
@@ -108,7 +91,7 @@ public:
   // climbing conditions
   // 1. node is non-negative
   // 2. cost does not exceed nodes threshold
-  std::pair<ulint, ulint> climb(ulint node_pos, uint &cost, uint d) {
+  std::tuple<ulint, ulint, ulint> climb(ulint node_pos, uint &cost, uint d) {
     // this provides us with the index of the sample that is being used to query
     // left_most_i is 0 and we get the distance from our start_pos
     // at the end we do leaf_index + the distance that was travelled to get the new sample
@@ -130,10 +113,10 @@ public:
       descend(start_pos, node_pos, cost, d, current_height);
       ulint distance = calculate_d(start_pos, node_pos);
 
-      cout << "leaf sample: " << leaf_samples[start_pos + distance] + cost << endl;
+      cout << "leaf sample: " << leaf_samples[start_pos - left_most_i + distance] << endl;
       cout << "distance left: " << d - distance << endl;
 
-      return (std::make_pair(leaf_samples[start_pos - left_most_i + distance], distance)); // return new sample and new distance
+      return (std::make_tuple(leaf_samples[start_pos - left_most_i + distance], distance, cost)); // return new sample and new distance
     }
 
     ulint shifts = 0;
@@ -151,7 +134,7 @@ public:
         current_height += 1;
         descend(start_pos, node_pos, cost, d, current_height);
         ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
-        return (std::make_pair(leaf_samples[start_pos - left_most_i + distance], distance)); // return new sample and new distance
+        return (std::make_tuple(leaf_samples[start_pos - left_most_i + distance], distance, cost)); // return new sample and new distance
       }
 
       node_pos = node_pos >> 1;
@@ -177,7 +160,7 @@ public:
     cout << "start pos: " << start_pos << endl;
     cout << "distance left: " << d - distance << endl;
 
-    return (std::make_pair(leaf_samples[start_pos - left_most_i + distance], distance)); // return new sample and new distance
+    return (std::make_tuple(leaf_samples[start_pos - left_most_i + distance], distance, cost)); // return new sample and new distance
   }
 
   // during the descent the node_pos gets shifted around so that calculate_d can do its job
@@ -295,11 +278,25 @@ public:
     return d;
   }
 
+  void print_debug_info() {
+    cout << "tree size: " << tree.size() << endl;
+    cout << "# of samples: " << leaf_samples.size() << endl;
+  }
+
   void print_tree() {
     cout << "tree bounds: ";
     for (size_t i = 0; i < tree.size(); i++) {
       cout << "[" << tree[i].first << "," << tree[i].second << "] ";
     }
+    cout << endl;
+  }
+
+  void print_samples() {
+    cout << "tree samples: ";
+    for(size_t i = 0; i < leaf_samples.size(); i++) {
+      cout << "[" << leaf_samples[i] << "] ";
+    }
+    cout << endl;
   }
 };
 }

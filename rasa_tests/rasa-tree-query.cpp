@@ -27,9 +27,13 @@ int main() {
   cout << endl;
 
   // query tests
-  std::pair<ulint, ulint> sample_and_delta = trees[0].query(8, 0, 1);
-  cout << "sample: " << sample_and_delta.first << endl;
-  cout << "delta: " << sample_and_delta.second << endl;
+  std::tuple<ulint, ulint, ulint> sample_and_delta = trees[0].query(8, 0, 1);
+  cout << "sample: " << std::get<0>(sample_and_delta) << endl;
+  cout << "delta: " << std::get<1>(sample_and_delta) << endl;
+
+  sample_and_delta = trees[0].query(8, 0, 2);
+  cout << "sample: " << std::get<0>(sample_and_delta) << endl;
+  cout << "delta: " << std::get<1>(sample_and_delta) << endl;
 
   return 0;
 }
