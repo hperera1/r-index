@@ -150,7 +150,7 @@ public:
         cout << " done. " << endl << endl;
 
         cout << "(3.5/3) Building rads ..." << endl;
-        rads rads_ds = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
+        csa = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
         rads_ds.print_tree_runs(unsorted_samples_first_vec, 0, 10);
 
         cout << "(4/3) Query tests ..." << endl;
@@ -425,6 +425,7 @@ public:
         w_bytes += pred.serialize(out);
         w_bytes += samples_last.serialize(out);
         w_bytes += pred_to_run.serialize(out);
+        w_bytes += csa.serialize(out);
         /*
         termout.write((char*)&terminator_position,sizeof(terminator_position));
         fout.write((char*)F.data(),256*sizeof(ulint));
@@ -448,6 +449,7 @@ public:
         pred.load(in);
         samples_last.load(in);
         pred_to_run.load(in);
+        csa.load(in);
     }
 
     /*
@@ -733,6 +735,7 @@ protected:
     sparse_bv_type pred;
     int_vector<> samples_last; //text positions corresponding to last characters in BWT runs, in BWT order
     int_vector<> pred_to_run; //stores the BWT run (0...R-1) corresponding to each position in pred, in text order
+    rads csa;
 };
 
 // function for building a sequence index out of input fasta, according to specified parameters

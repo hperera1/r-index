@@ -256,6 +256,7 @@ public:
   }
 
   // args: sa_j & d (j-i) | returns: what do we need to return? just d?
+  // replace in_cycle by using pred isntead of sa_map
   void helper_query(ulint &sa_j, ulint d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, std::vector<ulint> &sa) {
     ulint sa_jr;
     ulint sa_prime;
@@ -331,11 +332,79 @@ public:
     return tree_pointers.size();
   }
 
+  ulint serialize(std::ostream& out) {
+    ulint w_bytes = 0;
+    out.write((char*)&sa_map.size(), sizeof(sa_map.size()));
+    w_bytes += sizeof(sa_map.size());
+
+    for(auto element : sa_map) {
+      out.write((char*)&element.first, sizeof(element.first));
+      out.write((char*)&element.second, sizeof(element.second));
+      w_bytes += sizeof(element.first) + sizeof(element.second);
+    }
+
+    out.write((char*)&trees.size(), sizeof(trees.size()));
+    w_bytes += sizeof(trees.size());
+
+    for(size_t i = 0; i < trees.size(); i++) {
+      w_bytes += trees[i].serialize(out);
+    }
+
+    w_bytes += sdsl::serialize(tree_pointers.size(), out);
+    out.write((char*)&tree_pointers.data(), tree_pointers.size()*sizeof(tree_pointers[0]));
+    w_bytes += sizeof(tree_pointers[0])*tree_pointers.size();
+
+    w_bytes += sdsl::serialize(bounds.size(), out);
+    out.write((char*)&bounds.data(), bounds.size()*sizeof(bounds[0]));
+    w_bytes += sizeof(bounds[0])*bounds.size();
+
+    w_bytes += sdsl::serialize(sa_graph.size(), out);
+    out.write((char*)&sa_graph.data(), sa_graph.size()*sizeof(sa_graph[0]));
+    w_bytes += sizeof(sa_graph[0])*sa_graph.size();
+
+    w_bytes += sdsl::serialize(trees_bv, out);
+    return w_bytes;
+  }
+
+  void load(std::istream& in) {
+    size_t temp_size;
+    in.read((char*)&temp_size, sizeof(temp_size));
+
+    ulint key;
+    ulint value;
+    for(size_t i = 0; i < temp_size; i++) {
+      in.read((char*)&key, sizeof(key));
+      in.read((char*)&value, sizeof(value));
+      sa_map[key] = value;
+    }
+
+    in.read((char*)&temp_size, sizeof(temp_size));
+    trees.resize(temp_size);
+    for(size_t i = 0; i < temp_size; i++) {
+      trees[i].load(in);
+    }
+
+    in.read((char*)&temp_size, sizeof(temp_size));
+    tree_pointers.resize(temp_size);
+    in.read((char*)&tree_pointers.data(), temp_size*sizeof(tree_pointers[0]));
+
+    in.read((char*)&temp_size, sizeof(temp_size));
+    bounds.resize(temp_size);
+    in.read((char*)&bounds.data(), temp_size*sizeof(bounds[0]));
+
+    in.read((char*)&temp_size, sizeof(temp_size));
+    sa_graph.resize(temp_size);
+    in.read((char*)&sa_graph.data(), temp_size*sizeof(sa_graph[0]));
+
+    trees_bv.load(in);
+  }
+
 protected:
   std::unordered_map<ulint, ulint> sa_map; // this is just pred_to_run but pred_to_run wasn't working?
   std::unordered_map<ulint, ulint> phi_x_inv; // map of phi or phi_inverse values
+
   std::vector<rads_tree<>> trees; // list of trees.
-  std::vector<std::tuple<ulint, ulint, uint>> tree_pointers; // pointers to the corresponding run & tree & leaf node.
+  std::vector<std::tuple<ulint, ulint, uint>> tree_pointers; // pointers to the corresponding (run, tree, leaf node).
   std::vector<std::pair<ulint,ulint>> bounds; // lower and upper bounds of each node in the sa graph. // can be deleted at some point
   std::vector<ulint> sa_graph; // adj. list representing the sa graph.
   sparse_bv_type trees_bv; // bitvector that tells us which samples are in trees.

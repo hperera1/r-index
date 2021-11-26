@@ -16,8 +16,8 @@ public:
   std::vector<std::pair<long long int, long long int>> tree; // nodes are pairs that represent: (edge cost, edge threshold).
   std::vector<ulint> leaf_samples; // actual sa sample values represented by run index
   sparse_bv_type leaf_node_bv; // bv telling us which node is a leaf node
-  uint left_most_i; // index at which the left most leaf is stored
-  ulint height; // height of the tree starting at 0
+  uint left_most_i; // index at which the left most leaf is stored || sdsl::serialize
+  ulint height; // height of the tree starting at 0 || sdsl::serialize
 
   rads_tree(){};
   rads_tree(std::vector<ulint> &cycle, std::vector<std::pair<ulint, ulint>> &bounds, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers) {
