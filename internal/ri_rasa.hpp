@@ -29,8 +29,8 @@ public:
     cout << "Searching paths ..." << endl;
     find_cycles(ssa);
     cout << "--------------------------" << endl;
-    cout << "Debug info:" << endl;
-    cout << "Largest tree: " << this->get_largest_tree() << endl;
+    // cout << "Debug info:" << endl;
+    // cout << "Largest tree: " << this->get_largest_tree() << endl;
   }
 
   rads(const rads &other_rads) {
@@ -52,6 +52,10 @@ public:
   , sa_graph(move(other_rads.sa_graph))
   , trees_bv(move(other_rads.trees_bv))
   {}
+
+  rads& operator=(const rads &other_rads) {
+    return *this = rads(other_rads);
+  }
 
   // TO-DO for both constructions: how to make efficient?
   // construction for phi_inverse
@@ -334,16 +338,16 @@ public:
 
   ulint serialize(std::ostream& out) {
     ulint w_bytes = 0;
-    out.write((char*)&sa_map.size(), sizeof(sa_map.size()));
+    out.write((char*)sa_map.size(), sizeof(sa_map.size()));
     w_bytes += sizeof(sa_map.size());
 
     for(auto element : sa_map) {
-      out.write((char*)&element.first, sizeof(element.first));
-      out.write((char*)&element.second, sizeof(element.second));
+      out.write((char*)element.first, sizeof(element.first));
+      out.write((char*)element.second, sizeof(element.second));
       w_bytes += sizeof(element.first) + sizeof(element.second);
     }
 
-    out.write((char*)&trees.size(), sizeof(trees.size()));
+    out.write((char*)trees.size(), sizeof(trees.size()));
     w_bytes += sizeof(trees.size());
 
     for(size_t i = 0; i < trees.size(); i++) {
@@ -351,18 +355,19 @@ public:
     }
 
     w_bytes += sdsl::serialize(tree_pointers.size(), out);
-    out.write((char*)&tree_pointers.data(), tree_pointers.size()*sizeof(tree_pointers[0]));
+    out.write((char*)tree_pointers.data(), tree_pointers.size()*sizeof(tree_pointers[0]));
     w_bytes += sizeof(tree_pointers[0])*tree_pointers.size();
 
     w_bytes += sdsl::serialize(bounds.size(), out);
-    out.write((char*)&bounds.data(), bounds.size()*sizeof(bounds[0]));
+    out.write((char*)bounds.data(), bounds.size()*sizeof(bounds[0]));
     w_bytes += sizeof(bounds[0])*bounds.size();
 
     w_bytes += sdsl::serialize(sa_graph.size(), out);
-    out.write((char*)&sa_graph.data(), sa_graph.size()*sizeof(sa_graph[0]));
+    out.write((char*)sa_graph.data(), sa_graph.size()*sizeof(sa_graph[0]));
     w_bytes += sizeof(sa_graph[0])*sa_graph.size();
 
-    w_bytes += sdsl::serialize(trees_bv, out);
+    // w_bytes += sdsl::serialize(trees_bv, out);
+    w_bytes += trees_bv.serialize(out);
     return w_bytes;
   }
 
@@ -386,15 +391,15 @@ public:
 
     in.read((char*)&temp_size, sizeof(temp_size));
     tree_pointers.resize(temp_size);
-    in.read((char*)&tree_pointers.data(), temp_size*sizeof(tree_pointers[0]));
+    in.read((char*)tree_pointers.data(), temp_size*sizeof(tree_pointers[0]));
 
     in.read((char*)&temp_size, sizeof(temp_size));
     bounds.resize(temp_size);
-    in.read((char*)&bounds.data(), temp_size*sizeof(bounds[0]));
+    in.read((char*)bounds.data(), temp_size*sizeof(bounds[0]));
 
     in.read((char*)&temp_size, sizeof(temp_size));
     sa_graph.resize(temp_size);
-    in.read((char*)&sa_graph.data(), temp_size*sizeof(sa_graph[0]));
+    in.read((char*)sa_graph.data(), temp_size*sizeof(sa_graph[0]));
 
     trees_bv.load(in);
   }

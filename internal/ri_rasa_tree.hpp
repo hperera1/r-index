@@ -32,25 +32,26 @@ public:
     left_most_i = (tree.size() >> 1);
   }
 
-  rads_tree(const rads_tree &rads_tree_) {
-    this->tree = rads_tree_.tree;
-    this->leaf_samples = rads_tree_.leaf_samples;
-    this->leaf_node_bv = rads_tree_.leaf_node_bv;
-    this->left_most_i = rads_tree_.left_most_i;
-    this->height = rads_tree_.height;
+  rads_tree(const rads_tree &other_tree) {
+    this->tree = other_tree.tree;
+    this->leaf_samples = other_tree.leaf_samples;
+    this->leaf_node_bv = other_tree.leaf_node_bv;
+    this->left_most_i = other_tree.left_most_i;
+    this->height = other_tree.height;
   }
 
-  rads_tree(rads_tree &&rads_tree_) noexcept
-  : tree(move(rads_tree_.tree))
-  , leaf_samples(move(rads_tree_.leaf_samples))
-  , leaf_node_bv(move(rads_tree_.leaf_node_bv))
-  , left_most_i(move(rads_tree_.left_most_i))
-  , height(move(rads_tree_.height))
+  rads_tree(rads_tree &&other_tree) noexcept
+  : tree(move(other_tree.tree))
+  , leaf_samples(move(other_tree.leaf_samples))
+  , leaf_node_bv(move(other_tree.leaf_node_bv))
+  , left_most_i(move(other_tree.left_most_i))
+  , height(move(other_tree.height))
   {}
 
-  // rads_tree& operator=(const rads_tree &rads_tree_) {
-  //   return *this = rads_tree(rads_tree_);
-  // }
+  // we need a copy and swap operator?
+  rads_tree& operator=(const rads_tree &other_tree) {
+    return *this = rads_tree(other_tree);
+  }
 
   // rads_tree& operator=(rads_tree &&rads_tree_) noexcept {
   //   swap(tree, rads_tree_.tree);
@@ -297,6 +298,47 @@ public:
       cout << "[" << leaf_samples[i] << "] ";
     }
     cout << endl;
+  }
+
+  ulint serialize(std::ostream& out) {
+    ulint w_bytes = 0;
+
+    // serialize tree, leaf_samples, leaf_node_bv, left_most_i, height
+    w_bytes += sdsl::serialize(tree.size(), out);
+    out.write((char*)tree.data(), tree.size()*sizeof(tree[0]));
+    w_bytes += sizeof(tree[0])*tree.size();
+
+    w_bytes += sdsl::serialize(leaf_samples.size(), out);
+    out.write((char*)leaf_samples.data(), leaf_samples.size()*sizeof(leaf_samples[0]));
+    w_bytes += sizeof(leaf_samples[0])*leaf_samples.size();
+
+    // w_bytes += sdsl::serialize(leaf_node_bv, out);
+    w_bytes += leaf_node_bv.serialize(out);
+
+    out.write((char*)left_most_i, sizeof(left_most_i));
+    w_bytes += sizeof(left_most_i) + 256*sizeof(uint);
+
+    out.write((char*)height, sizeof(height));
+    w_bytes += sizeof(height) + 256*sizeof(ulint);
+
+    return w_bytes;
+  }
+
+  void load(std::istream& in) {
+    // load tree, leaf_samples, leaf_node_bv, left_most_i, height
+    size_t temp_size;
+    in.read((char*)&temp_size, sizeof(temp_size));
+    tree.resize(temp_size);
+    in.read((char*)tree.data(), temp_size*sizeof(tree[0]));
+
+    in.read((char*)&temp_size, sizeof(temp_size));
+    leaf_samples.resize(temp_size);
+    in.read((char*)leaf_samples.data(), temp_size*sizeof(leaf_samples[0]));
+
+    leaf_node_bv.load(in);
+
+    in.read((char*)&left_most_i, sizeof(left_most_i));
+    in.read((char*)&height, sizeof(height));
   }
 };
 }

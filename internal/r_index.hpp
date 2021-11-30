@@ -151,11 +151,11 @@ public:
 
         cout << "(3.5/3) Building rads ..." << endl;
         csa = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
-        rads_ds.print_tree_runs(unsorted_samples_first_vec, 0, 10);
+        // csa.print_tree_runs(unsorted_samples_first_vec, 0, 10);
 
-        cout << "(4/3) Query tests ..." << endl;
-        cout << "Trying to find sa_i = 6 ..." << endl;
-        cout << "query result: " << rads_ds.query(6, bwt, pred_to_run, pred, samples_last_vec) << endl;
+        // cout << "(4/3) Query tests ..." << endl;
+        // cout << "Trying to find sa_i = 6 ..." << endl;
+        // cout << "query result: " << csa.query(6, bwt, pred_to_run, pred, samples_last_vec) << endl;
     }
 
     void from_bwt(std::string fname) {
@@ -735,7 +735,7 @@ protected:
     sparse_bv_type pred;
     int_vector<> samples_last; //text positions corresponding to last characters in BWT runs, in BWT order
     int_vector<> pred_to_run; //stores the BWT run (0...R-1) corresponding to each position in pred, in text order
-    rads csa;
+    rads<> csa;
 };
 
 // function for building a sequence index out of input fasta, according to specified parameters
