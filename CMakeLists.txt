@@ -149,6 +149,13 @@ TARGET_LINK_LIBRARIES(rasa-tree-query divsufsort64)
 TARGET_LINK_LIBRARIES(rasa-tree-query z)
 TARGET_LINK_LIBRARIES(rasa-tree-query klib)
 
+add_executable(rasa-tree-load ./rasa_tests/rasa-tree-load.cpp)
+TARGET_LINK_LIBRARIES(rasa-tree-load sdsl)
+TARGET_LINK_LIBRARIES(rasa-tree-load divsufsort)
+TARGET_LINK_LIBRARIES(rasa-tree-load divsufsort64)
+TARGET_LINK_LIBRARIES(rasa-tree-load z)
+TARGET_LINK_LIBRARIES(rasa-tree-load klib)
+
 add_executable(ri-query ri-query.cpp)
 TARGET_LINK_LIBRARIES(ri-query sdsl)
 TARGET_LINK_LIBRARIES(ri-query divsufsort)

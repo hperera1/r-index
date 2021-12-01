@@ -35,7 +35,7 @@ public:
 
 int main(int argc, char** argv) {
   cout << "testing bv." << endl;
-  bv_test ds = bv_test();
+  // bv_test ds = bv_test();
 
   return 0;
 }

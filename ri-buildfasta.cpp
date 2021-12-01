@@ -22,7 +22,7 @@ struct ribuild_args {
 void print_help() {
 	fprintf(stderr, "ri-buildfasta: builds the r-index from a fasta file. Extension .ri is automatically added to output index file\n");
 	fprintf(stderr, "Usage: ri-buildfasta [options] <input_fasta_name>\n");
-	fprintf(stderr, "    --output_prefix <basename>\n"); 
+	fprintf(stderr, "    --output_prefix <basename>\n");
 	fprintf(stderr, "    -o <basename>                  use 'basename' as prefix for all index files. Default: basename is the specified input_file_name\n");
 	fprintf(stderr, "    --bwt_alg <alg>\n");
 	fprintf(stderr, "    -b <alg>                       bwt algorithm (bigbwt, sais), default:bigbwt\n");
@@ -44,7 +44,7 @@ ribuild_args parse_args(int argc, char** argv) {
         {"threads", required_argument, 0, 't'}
     };
     int long_index = 0;
-    while((c = getopt_long(argc, argv, "o:b:at:", long_options, &long_index)) != -1) { 
+    while((c = getopt_long(argc, argv, "o:b:at:", long_options, &long_index)) != -1) {
         switch (c) {
             case 'o':
                 args.outpre = optarg;

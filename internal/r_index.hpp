@@ -150,9 +150,11 @@ public:
         cout << " done. " << endl << endl;
 
         cout << "(3.5/3) Building rads ..." << endl;
-        csa = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
+        rads rads_csa = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
+        csa = rads_csa;
+        cout << "done." << endl;
         // csa.print_tree_runs(unsorted_samples_first_vec, 0, 10);
-
+        //
         // cout << "(4/3) Query tests ..." << endl;
         // cout << "Trying to find sa_i = 6 ..." << endl;
         // cout << "query result: " << csa.query(6, bwt, pred_to_run, pred, samples_last_vec) << endl;

@@ -53,14 +53,14 @@ public:
     return *this = rads_tree(other_tree);
   }
 
-  // rads_tree& operator=(rads_tree &&rads_tree_) noexcept {
-  //   swap(tree, rads_tree_.tree);
-  //   swap(leaf_samples, rads_tree_.leaf_samples);
-  //   swap(leaf_node_bv, rads_tree_.leaf_node_bv);
-  //   swap(left_most_i, rads_tree_.left_most_i);
-  //   swap(height, rads_tree_.height);
-  //   return *this;
-  // }
+  rads_tree& operator=(rads_tree &&other_tree) {
+    swap(tree, other_tree.tree);
+    swap(leaf_samples, other_tree.leaf_samples);
+    swap(leaf_node_bv, other_tree.leaf_node_bv);
+    swap(left_most_i, other_tree.left_most_i);
+    swap(height, other_tree.height);
+    return *this;
+  }
 
   // recursively constructs a balanced binary tree from the leaves up to the root.
   void constructor_helper(std::vector<std::pair<ulint, ulint>> &bounds, size_t node, size_t begin, size_t end, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers, std::vector<bool> &leaf_bv) {
@@ -279,12 +279,17 @@ public:
     return d;
   }
 
-  void print_debug_info() {
+  void print_tree_info() {
     cout << "tree size: " << tree.size() << endl;
     cout << "# of samples: " << leaf_samples.size() << endl;
+    print_bounds();
+    print_samples();
+    print_nodebv();
+    cout << "left_most_i: " << left_most_i << endl;
+    cout << "height: " << height << endl;
   }
 
-  void print_tree() {
+  void print_bounds() {
     cout << "tree bounds: ";
     for (size_t i = 0; i < tree.size(); i++) {
       cout << "[" << tree[i].first << "," << tree[i].second << "] ";
@@ -300,10 +305,18 @@ public:
     cout << endl;
   }
 
+  void print_nodebv() {
+    cout << "node bv: ";
+    for(size_t i = 0; i < leaf_node_bv.size(); i++) {
+      cout << "[" << leaf_node_bv[i] << "] ";
+    }
+    cout << endl;
+  }
+
+  // serialize tree, leaf_samples, leaf_node_bv, left_most_i, height
   ulint serialize(std::ostream& out) {
     ulint w_bytes = 0;
 
-    // serialize tree, leaf_samples, leaf_node_bv, left_most_i, height
     w_bytes += sdsl::serialize(tree.size(), out);
     out.write((char*)tree.data(), tree.size()*sizeof(tree[0]));
     w_bytes += sizeof(tree[0])*tree.size();
@@ -312,21 +325,17 @@ public:
     out.write((char*)leaf_samples.data(), leaf_samples.size()*sizeof(leaf_samples[0]));
     w_bytes += sizeof(leaf_samples[0])*leaf_samples.size();
 
-    // w_bytes += sdsl::serialize(leaf_node_bv, out);
     w_bytes += leaf_node_bv.serialize(out);
-
-    out.write((char*)left_most_i, sizeof(left_most_i));
-    w_bytes += sizeof(left_most_i) + 256*sizeof(uint);
-
-    out.write((char*)height, sizeof(height));
-    w_bytes += sizeof(height) + 256*sizeof(ulint);
+    w_bytes += sdsl::serialize(left_most_i, out);
+    w_bytes += sdsl::serialize(height, out);
 
     return w_bytes;
   }
 
+  // load tree, leaf_samples, leaf_node_bv, left_most_i, height
   void load(std::istream& in) {
-    // load tree, leaf_samples, leaf_node_bv, left_most_i, height
     size_t temp_size;
+
     in.read((char*)&temp_size, sizeof(temp_size));
     tree.resize(temp_size);
     in.read((char*)tree.data(), temp_size*sizeof(tree[0]));

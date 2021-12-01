@@ -28,12 +28,12 @@ public:
     build_rads_phi(unsorted_ssa, ssa, esa, pred);
     cout << "Searching paths ..." << endl;
     find_cycles(ssa);
-    cout << "--------------------------" << endl;
-    // cout << "Debug info:" << endl;
-    // cout << "Largest tree: " << this->get_largest_tree() << endl;
+    cout << "\nDebug info: " << endl;
+    print_debug_info();
   }
 
   rads(const rads &other_rads) {
+    cout << "copy constructor() ";
     this->sa_map = other_rads.sa_map;
     this->phi_x_inv = other_rads.phi_x_inv;
     this->trees = other_rads.trees;
@@ -41,6 +41,7 @@ public:
     this->bounds = other_rads.bounds;
     this->sa_graph = other_rads.sa_graph;
     this->trees_bv = other_rads.trees_bv;
+    cout << "done." << endl;
   }
 
   rads(rads &&other_rads)
@@ -51,10 +52,25 @@ public:
   , bounds(move(other_rads.bounds))
   , sa_graph(move(other_rads.sa_graph))
   , trees_bv(move(other_rads.trees_bv))
-  {}
+  {
+    cout << "move constructor()." << endl;
+  }
 
   rads& operator=(const rads &other_rads) {
+    cout << "copy assignment." << endl;
     return *this = rads(other_rads);
+  }
+
+  rads& operator=(rads &&other_rads) {
+    cout << "move assignment." << endl;
+    swap(sa_map, other_rads.sa_map);
+    swap(phi_x_inv, other_rads.phi_x_inv);
+    swap(trees, other_rads.trees);
+    swap(tree_pointers, other_rads.tree_pointers);
+    swap(bounds, other_rads.bounds);
+    swap(sa_graph, other_rads.sa_graph);
+    swap(trees_bv, other_rads.trees_bv);
+    return *this;
   }
 
   // TO-DO for both constructions: how to make efficient?
@@ -275,14 +291,20 @@ public:
       cout << "sa_prime: " << sa_prime << endl;
       cout << "cost: " << cost << endl;
 
+      // cout << "----------------" << endl;
+      // cout << sa_map[sa_prime] << endl;
+      // cout << pred.predecessor_rank_circular(sa_prime) << endl;
+      // cout << pred_to_run[sa_j] << endl;
+      // cout << pred_to_run[sa_jr] << endl;
+      // cout << pred_to_run[sa_prime] << endl;
+      // cout << "----------------" << endl;
+
       // check if pred is in a cycle
-      if(in_cycle(sa_prime) && d != 1) { // dont need to use sa_prime, you can use sa_jr because the rank tells you what index to query
+      if(in_cycle(pred_to_run[sa_jr]) && d != 1) { // dont need to use sa_prime, you can use sa_jr because the rank tells you what index to query
         cout << "\nwere in a cycle ..." << endl;
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)];
         cout << "sample run: " << std::get<0>(tree_info) << ", sample tree: " << std::get<1>(tree_info) << ", sample leaf: " << std::get<2>(tree_info) << endl;
-        trees[std::get<1>(tree_info)].print_debug_info();
-        trees[std::get<1>(tree_info)].print_tree();
-        trees[std::get<1>(tree_info)].print_samples();
+        trees[std::get<1>(tree_info)].print_tree_info();
         std::tuple<ulint, ulint, ulint> sa_prime_d_cost = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d); // tuple containing new sample run, distance travelled, and cost accumulated
         // sa_prime is the new sample (leaf) that we got from the tree.
 
@@ -308,11 +330,17 @@ public:
     cout << "sa_j: " << sa_j << endl;
   }
 
-  bool in_cycle(ulint sa) {
-    if(trees_bv[sa_map[sa]])
+  bool in_cycle(ulint sa_run) {
+    if(trees_bv[sa_run]) {
       return true;
+    }
 
     return false;
+  }
+
+  void print_debug_info() {
+    cout << "# of rads_trees & tree_pointers: " << trees.size() << endl;
+    cout << "largest tree: " << get_largest_tree() << " samples" << endl;
   }
 
   void print_tree_runs(std::vector<std::pair<ulint, ulint>> &ssa, size_t start, size_t end) {
@@ -332,24 +360,23 @@ public:
     return max_tree_size;
   }
 
-  inline int get_num_trees() {
-    return tree_pointers.size();
-  }
-
   ulint serialize(std::ostream& out) {
     ulint w_bytes = 0;
-    out.write((char*)sa_map.size(), sizeof(sa_map.size()));
-    w_bytes += sizeof(sa_map.size());
 
-    for(auto element : sa_map) {
-      out.write((char*)element.first, sizeof(element.first));
-      out.write((char*)element.second, sizeof(element.second));
-      w_bytes += sizeof(element.first) + sizeof(element.second);
-    }
+    // cout << sa_map.size() << endl;
+    // out.write((char*)(&sa_map)->size(), sizeof(sa_map.size()));
+    // w_bytes += sizeof(sa_map.size());
+    //
+    // cout << "sa_map serialized." << endl;
+    //
+    // for(auto element : sa_map) {
+    //   out.write((char*)element.first, sizeof(element.first));
+    //   out.write((char*)element.second, sizeof(element.second));
+    //   w_bytes += sizeof(element.first) + sizeof(element.second);
+    // }
 
-    out.write((char*)trees.size(), sizeof(trees.size()));
+    out.write((char*)&trees[0], trees.size()*sizeof(rads_tree<>));
     w_bytes += sizeof(trees.size());
-
     for(size_t i = 0; i < trees.size(); i++) {
       w_bytes += trees[i].serialize(out);
     }
@@ -366,22 +393,23 @@ public:
     out.write((char*)sa_graph.data(), sa_graph.size()*sizeof(sa_graph[0]));
     w_bytes += sizeof(sa_graph[0])*sa_graph.size();
 
-    // w_bytes += sdsl::serialize(trees_bv, out);
     w_bytes += trees_bv.serialize(out);
+
     return w_bytes;
   }
 
   void load(std::istream& in) {
     size_t temp_size;
-    in.read((char*)&temp_size, sizeof(temp_size));
 
-    ulint key;
-    ulint value;
-    for(size_t i = 0; i < temp_size; i++) {
-      in.read((char*)&key, sizeof(key));
-      in.read((char*)&value, sizeof(value));
-      sa_map[key] = value;
-    }
+    // in.read((char*)&temp_size, sizeof(temp_size));
+    //
+    // ulint key;
+    // ulint value;
+    // for(size_t i = 0; i < temp_size; i++) {
+    //   in.read((char*)&key, sizeof(key));
+    //   in.read((char*)&value, sizeof(value));
+    //   sa_map[key] = value;
+    // }
 
     in.read((char*)&temp_size, sizeof(temp_size));
     trees.resize(temp_size);

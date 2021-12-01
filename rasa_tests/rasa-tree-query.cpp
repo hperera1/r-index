@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <random>
 #include <set>
 #include <cstring>
@@ -23,7 +24,7 @@ int main() {
   std::vector<std::pair<ulint, ulint>> tree_1_bounds = {{5,1}, {0,6}, {0,3}, {2,1}, {0,3}, {4,1}};
 
   trees.push_back(rads_tree(tree_1, tree_1_bounds, 0, tree_pointers));
-  trees[0].print_tree();
+  trees[0].print_tree_info();
   cout << endl;
 
   // query tests
@@ -34,6 +35,9 @@ int main() {
   sample_and_delta = trees[0].query(8, 0, 2);
   cout << "sample: " << std::get<0>(sample_and_delta) << endl;
   cout << "delta: " << std::get<1>(sample_and_delta) << endl;
+
+  ofstream out("../rasa_tests/test_rads", ios::binary);
+  trees[0].serialize(out);
 
   return 0;
 }
