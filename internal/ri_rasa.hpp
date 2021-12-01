@@ -33,7 +33,6 @@ public:
   }
 
   rads(const rads &other_rads) {
-    cout << "copy constructor() ";
     this->sa_map = other_rads.sa_map;
     this->phi_x_inv = other_rads.phi_x_inv;
     this->trees = other_rads.trees;
@@ -41,7 +40,6 @@ public:
     this->bounds = other_rads.bounds;
     this->sa_graph = other_rads.sa_graph;
     this->trees_bv = other_rads.trees_bv;
-    cout << "done." << endl;
   }
 
   rads(rads &&other_rads)
@@ -52,17 +50,13 @@ public:
   , bounds(move(other_rads.bounds))
   , sa_graph(move(other_rads.sa_graph))
   , trees_bv(move(other_rads.trees_bv))
-  {
-    cout << "move constructor()." << endl;
-  }
+  {}
 
   rads& operator=(const rads &other_rads) {
-    cout << "copy assignment." << endl;
     return *this = rads(other_rads);
   }
 
   rads& operator=(rads &&other_rads) {
-    cout << "move assignment." << endl;
     swap(sa_map, other_rads.sa_map);
     swap(phi_x_inv, other_rads.phi_x_inv);
     swap(trees, other_rads.trees);
