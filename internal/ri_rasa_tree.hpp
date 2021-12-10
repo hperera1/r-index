@@ -82,10 +82,9 @@ public:
   // args: leaf_pos, cost, d | returns: returns new sample index and distance travelled (sa', d)
   std::tuple<ulint, ulint, ulint> query(ulint leaf_pos, uint cost, uint d) {
     // begin climbing the tree and only collect when we go to a sibling.
-    // when you go to a parent do not collect the money, that is if the parent has the same left most node.
+    // when you go to a parent do not collect the cost, that is if the parent has the same left most node.
     // if youre moving to a subtree where the leftmost node is not the same then we have to collect the money.
-    cout << "Querying tree ..." << endl;
-    cout << "leaf_pos: " << leaf_pos << ", cost: " << cost << ", d: " << d << endl;
+    // cout << "\nleaf_pos: " << leaf_pos << ", cost: " << cost << ", d: " << d << endl;
     return (climb(leaf_pos, cost, d));
   }
 
@@ -97,71 +96,68 @@ public:
     // left_most_i is 0 and we get the distance from our start_pos
     // at the end we do leaf_index + the distance that was travelled to get the new sample
     // eg. start_pos = 21 -> leaf_index = 0; distance travelled = 2; leaf_index + distance travelled = 2; new_sample = leaf_samples[2] (11)
-    cout << "Climbing ..." << endl;
+    // cout << "Climbing ..." << endl;
     ulint current_height = height; // we always enter at a leaf node so we are at level with the height of the tree
     ulint start_pos = node_pos;
 
-    if((node_pos << 1) < tree.size()) { // this means that we are actually at height - 1.
+    if((node_pos << 1) < tree.size()) { // this means that we are actually at height - 1 because we entered from a leaf node one height up.
+      // cout << "height adjusted." << endl;
       current_height -= 1;
     }
 
     // check if when we shift up we get to the root of the left subtree
     // meaning we can skip forward to the beginning of the right subtree and descend
     if(node_pos>>(__builtin_ctzl(~node_pos)) == 2) {
-      cout << "\nSkipping to the right subtree and desceding ..." << endl;
+      cout << "\nskipping to right subtree." << endl;
       node_pos = 3;
       current_height = 1;
       descend(start_pos, node_pos, cost, d, current_height);
       ulint distance = calculate_d(start_pos, node_pos);
-
-      cout << "leaf sample: " << leaf_samples[start_pos - left_most_i + distance] << endl;
-      cout << "distance left: " << d - distance << endl;
-
-      return (std::make_tuple(leaf_samples[start_pos - left_most_i + distance], distance, cost)); // return new sample and new distance
+      ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
+      return (std::make_tuple(leaf_samples[leaf_sample_index], distance, cost)); // return new sample and new distance
     }
 
     ulint shifts = 0;
     int max_d_travelled = 0;
-    cout << "node pos: " << node_pos << endl;
-    while((node_pos != 1) && (tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // climb up while the upper_bounds let us
+    int last_bit = (node_pos & 1);
+    while(((node_pos != 1) && (tree[node_pos].second > 0) && (cost < tree[node_pos].second)) || leaf_node_bv[node_pos]) { // climb up while the upper_bounds let us
       int distance_diff = (int) d - max_d_travelled;
-      cout << "distance_diff: " << distance_diff << endl;
       if(distance_diff <= 0) {
         // this means that the sample we are looking for is in the current interval that we are covering
         // if this is true then we should start descending from this node
-        cout << "max_d check true" << endl;
+        // cout << "max_d check true" << endl;
         cost += tree[node_pos << 1].first; // add cost of node that denies us
         node_pos = (node_pos << 1) + 1; // move node_pos to the right child of the current node
         current_height += 1;
         descend(start_pos, node_pos, cost, d, current_height);
         ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
-        return (std::make_tuple(leaf_samples[start_pos - left_most_i + distance], distance, cost)); // return new sample and new distance
+        ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
+        return (std::make_tuple(leaf_samples[leaf_sample_index], distance, cost)); // return new sample and new distance
       }
 
-      node_pos = node_pos >> 1;
-      cout << "\nnew node pos: " << node_pos << endl;
+      if(last_bit == 0) {
+        // cout << "left node up." << endl;
+        node_pos = node_pos >> 1;
+      }
+      else {
+        // cout << "right node up and right." << endl;
+        node_pos = (node_pos >> 1) + 1;
+      }
+
       current_height -= 1;
       ulint max_node_pos = ((node_pos << (height - current_height)) + ((1 << (height - current_height)) - 1));
-      cout << "start: " << start_pos << " max: " << max_node_pos << endl;
       ulint max_d = calculate_d(start_pos, max_node_pos); // (node_pos gets shifted by the distance to the leaves) + (1 shifted that many times left - 1)
       max_d_travelled = (int) max_d;
-      cout << "max_d_travelled: " << max_d_travelled << endl;
     }
 
-    cout << "\nwe're at the root or we've been denied by a bound." << endl;
-    current_height += 1;
+    // cout << "done climbing." << endl;
     cost += tree[node_pos << 1].first; // add cost of node that denies us
     node_pos = (node_pos << 1) + 1; // move node_pos to the right child of the current node
+    current_height += 1;
     descend(start_pos, node_pos, cost, d, current_height); // descend using new node_pos, cost, and d
     ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
-    cout << "final distance calc: " << distance << endl;
-
-    // this doesn't work. probably simple fix cause i'm tired and can't tell
-    cout << "leaf sample: " << leaf_samples[start_pos - left_most_i + distance] << endl;
-    cout << "start pos: " << start_pos << endl;
-    cout << "distance left: " << d - distance << endl;
-
-    return (std::make_tuple(leaf_samples[start_pos - left_most_i + distance], distance, cost)); // return new sample and new distance
+    ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
+    return (std::make_tuple(leaf_samples[leaf_sample_index], distance, cost)); // return new sample and new distance
   }
 
   // during the descent the node_pos gets shifted around so that calculate_d can do its job
@@ -170,30 +166,30 @@ public:
     // 1. check node_pos that is passed in
     // 2. if YAY then check your immediate sibling
     // 3. if NAY then check left child until you get a green light
-    cout << "\nDescending ..." << endl;
-    cout << "start pos: " << start_pos << endl;
-    cout << "node pos: " << node_pos << endl;
-    cout << "d: " << d << endl;
-    cout << "current height: " << current_height << endl;
+    // cout << "\ndescending." << endl;
+    // cout << "start pos: " << start_pos << endl;
+    // cout << "node pos: " << node_pos << endl;
+    // cout << "d: " << d << endl;
+    // cout << "current height: " << current_height << endl;
 
     while((node_pos < leaf_node_bv.size()) && !leaf_node_bv[node_pos]) { // while we are not at a leaf node
       // check min_d_travelled before descending to the next node
       // if its < 0 then that means we have moved past the interval our sample is contained in. if this is the case go to our left sibling
-      cout << "testing end_pos: " << (node_pos << (height - current_height)) << endl;
-      cout << "new node pos: " << node_pos << endl;
+      // cout << "testing end_pos: " << (node_pos << (height - current_height)) << endl;
+      // cout << "new node pos: " << node_pos << endl;
       int min_d_travelled;
       int last_bit = (node_pos & 1);
-      cout << "last_bit: " << last_bit << endl;
+      // cout << "last_bit: " << last_bit << endl;
 
       if(last_bit == 0) { // this means we are at a left child node
-        cout << "left node." << endl;
-        if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // if good -> go to right sibling
-          cout << "go to right sibling." << endl;
+        // cout << "left node." << endl;
+        if((tree[node_pos].second > 0) && (cost < tree[node_pos].second)) { // if good -> go to right sibling
+          // cout << "go to right sibling." << endl;
           node_pos += 1;
           ulint min_node = (node_pos << (height - current_height));
           min_d_travelled = (int) calculate_d(start_pos, min_node);
           if(((int) d - min_d_travelled) < 0) {
-            cout << "we've gone too far. go to left sib right child." << endl;
+            cout << "gone too far." << endl;
             node_pos -= 1;
             node_pos = node_pos << 1;
             node_pos += 1;
@@ -205,26 +201,26 @@ public:
           }
         }
         else {
-          cout << "go to left child." << endl;
+          // cout << "go to left child." << endl;
           current_height += 1;
           node_pos = node_pos << 1; // if not good then go to left child and check on next iteration
         }
       }
       else { // right node
-        cout << "right node." << endl;
-        if((tree[node_pos].second > 0) && (cost <= tree[node_pos].second)) { // if good -> go to right child
-          cout << "go to right child." << endl;
+        // cout << "right node." << endl;
+        if((tree[node_pos].second > 0) && (cost < tree[node_pos].second)) { // if good -> go to right child
+          // cout << "go to right child." << endl;
           current_height += 1;
           node_pos = (node_pos << 1) + 1;
           ulint min_node = (node_pos << (height - current_height));
           min_d_travelled = (int) calculate_d(start_pos, min_node);
           if(((int) d - min_d_travelled) < 0) {
-            cout << "right child doesn't have sample. go to left child." << endl;
+            // cout << "right child doesn't have sample. go to left child." << endl;
             node_pos -= 1;
           }
         }
         else {
-          cout << "go to left child." << endl;
+          // cout << "go to left child." << endl;
           current_height += 1;
           node_pos = node_pos << 1; // if not good then go to left child and check that guy on the next iterations
         }
@@ -234,17 +230,18 @@ public:
     ulint min_node = (node_pos << (height - current_height));
     int min_d_travelled = (int) calculate_d(start_pos, min_node);
     if(((int) d - min_d_travelled) < 0) {
+      cout << "we go back one again." << endl;
       node_pos -= 1;
     }
 
-    cout << "node pos after shifts: " << node_pos << endl;
+    // cout << "node pos after shifts: " << node_pos << endl;
   }
 
   // calculates the distance between leaf nodes: start_pos and end_pos. distance meaning the number of leaf nodes between these two indices.
   ulint calculate_d(ulint start_pos, ulint end_pos) {
     ulint d = 0;
-    cout << "start: " << start_pos << endl;
-    cout << "end: " << end_pos << endl;
+    // cout << "start: " << start_pos << endl;
+    // cout << "end: " << end_pos << endl;
 
     if(start_pos >= left_most_i) { // starting from bottom layer
       if(end_pos >= left_most_i) { // going to bottom layer bot->bot
@@ -275,7 +272,7 @@ public:
       }
     }
 
-    cout << "calc_d d: " << d << endl;
+    // cout << "calc_d d: " << d << endl;
     return d;
   }
 

@@ -11,23 +11,28 @@
 using namespace ri;
 using namespace std;
 
-bool hyb=false;
+bool hyb = false;
+string bwt;
+rle_string rle_bwt;
+std::vector<ulint> esa;
 
 void help() {
-  cout << "ri-query: RA to SA using phi" << endl;
+  cout << "ri-query: RA to SA using phi." << endl;
   cout << "Usage:       ri-query <index> <end samples> <# of queries>" << endl;
-  cout << "   <index>   index file (with extension .ri)\n   <end samples>   .esa file\n   <# of queries>   inputting '0', queries the entire index\n   (optional) <index of query>   provide index to query" << endl;
-  //cout << "   -h        use hybrid bitvectors instead of elias-fano in both RLBWT and predecessor structures. -h is required "<<endl;
-  //cout << "             if the index was built with -h options enabled."<<endl;
+  cout << "   <index>   index file (with extension .ri)";
+  cout << "\n   <end samples>   .esa file";
+  cout << "\n   <# of queries>   inputting '0', queries the entire index";
+  cout << "\n   (optional) <index of query>   provide index to query" << endl;
   exit(0);
 }
 
 void parse_args(char** argv, int argc, int &ptr) {
-  assert(ptr<argc);
+  assert(ptr < argc);
   string s(argv[ptr]);
   ptr++;
-  // if(argc < 4)
-  //   help();
+  if(argc < 3) {
+    help();
+  }
 }
 
 vector<ulint>& get_esa(std::string fname, ulint n, vector<ulint> &esa) {
@@ -42,16 +47,40 @@ vector<ulint>& get_esa(std::string fname, ulint n, vector<ulint> &esa) {
     return esa;
 }
 
+// queries a particular SA[n].
+ulint query_n(string esa_filename, r_index<> &idx, uint sa_n) {
+  ulint r = idx.number_of_runs();
+  ulint j;
+  ulint run;
+  r = esa.size();
+
+  run = rle_bwt.run_of_position(sa_n); // run number
+  j = rle_bwt.run_range(run).second; // run ends at this value
+  ulint phi_val = esa[run]; // end sample at specified run
+
+  cout << "run: " << run << endl;
+  cout << "run l: " << j << endl;
+  cout << "sample: " << phi_val << endl;
+  cout << "distance: " << j-sa_n << endl << endl;;
+
+  for (size_t iter = 0; iter < (j - sa_n); iter++) {
+    cout << phi_val << endl;
+    phi_val = idx.Phi(phi_val); // sa-1 until we find n (j-i times)
+  }
+  
+  return phi_val;
+}
+
 // queries every generated sample.
-void SA(std::set<ulint> &samples, string esaFilename, r_index<> idx) {
+void query_random(std::set<ulint> &samples, string esa_filename, r_index<> idx) {
   string bwt = idx.get_bwt();          // ? these calls take quite a while ?
-  rle_string rleBwt = rle_string(bwt); // ? are these two calls avoidable ?
-  ulint n = rleBwt.size();
+  rle_string rle_bwt = rle_string(bwt); // ? are these two calls avoidable ?
+  ulint n = rle_bwt.size();
   ulint r = idx.number_of_runs();
   ulint j;
   ulint run;
   std::vector<ulint> esa;
-  get_esa(esaFilename, n, esa);
+  get_esa(esa_filename, n, esa);
   r = esa.size();
 
   // beginning of querying all the samples.
@@ -59,12 +88,12 @@ void SA(std::set<ulint> &samples, string esaFilename, r_index<> idx) {
   auto t1 = std::chrono::high_resolution_clock::now();
   for (std::set<ulint>::iterator sIter = samples.begin(); sIter != samples.end(); sIter++) {
     ulint i = *sIter; // sample.
-    run = rleBwt.run_of_position(i); // run sample belongs to.
-    j = rleBwt.run_range(run).second; // size of run.
-    ulint phiVal = esa[run]; // sa value.
+    run = rle_bwt.run_of_position(i); // run sample belongs to.
+    j = rle_bwt.run_range(run).second; // size of run.
+    ulint phi_val = esa[run]; // sa value.
 
     for (size_t iter = 0; iter < (j-i); iter++)
-       phiVal = idx.Phi(phiVal); // iterate backwards j-i times to find value of i.
+       phi_val = idx.Phi(phi_val); // iterate backwards j-i times to find value of i.
   }
 
   auto t2 = std::chrono::high_resolution_clock::now();
@@ -77,64 +106,29 @@ void SA(std::set<ulint> &samples, string esaFilename, r_index<> idx) {
   cout << "n/r: " << (static_cast<float>(n)/static_cast<float>(r)) << endl;
 }
 
-// queries a particular SA[n].
-void SA_n(string esaFilename, r_index<> idx, uint sa_n) {
-  string bwt = idx.get_bwt();
-  rle_string rleBwt = rle_string(bwt);
-  ulint n = rleBwt.size();
-  ulint r = idx.number_of_runs();
-  ulint j;
-  ulint run;
-
-  std::vector<ulint> esa;
-  get_esa(esaFilename, n, esa);
-  r = esa.size();
-
-  cout << "esa values:" << endl;
-  for (size_t i = 0; i < 20; i++) {
-    cout << esa[i] << endl;
-  }
-
-  // here we find out how long it takes to query all the samples being asked for.
-  cout << "\nfinding your query:" << endl;
-  cout << "n: " << sa_n << endl;
-  run = rleBwt.run_of_position(sa_n); // run number
-  cout << "run: " << run << endl;
-  j = rleBwt.run_range(run).second; // run ends at this value
-  cout << "run end: " << j << endl;
-  cout << "run size: " << (j-sa_n) << endl;
-  ulint phiVal = esa[run]; // end sample at specified run
-
-  cout << phiVal << endl;
-  for (size_t iter = 0; iter < (j-sa_n); iter++) {
-    phiVal = idx.Phi(phiVal); // sa-1 until we find n (j-i times)
-    cout << phiVal << endl;
-  }
-}
-
 // queries the entire r-index.
-void SA_all(string esaFilename, r_index<> idx) {
+void query_all(string esa_filename, r_index<> idx) {
   string bwt = idx.get_bwt();
-  rle_string rleBwt = rle_string(bwt);
-  ulint n = rleBwt.size();
+  rle_string rle_bwt = rle_string(bwt);
+  ulint n = rle_bwt.size();
   ulint r = idx.number_of_runs();
   ulint j;
   ulint run;
 
   std::vector<ulint> esa;
-  get_esa(esaFilename, n, esa);
+  get_esa(esa_filename, n, esa);
   r = esa.size();
 
   // here we find out how long it takes to query all the samples being asked for.
   cout << "\nperforming all queries:" << endl;
   auto t1 = std::chrono::high_resolution_clock::now();
   for (size_t i = 1; i <= r; i++) {
-    run = rleBwt.run_of_position(i);
-    j = rleBwt.run_range(run).second;
-    ulint phiVal = esa[run];
+    run = rle_bwt.run_of_position(i);
+    j = rle_bwt.run_range(run).second;
+    ulint phi_val = esa[run];
 
     for (size_t iter = 0; iter < (j-i); iter++)
-      phiVal = idx.Phi(phiVal);
+      phi_val = idx.Phi(phi_val);
   }
   auto t2 = std::chrono::high_resolution_clock::now();
   ulint total1 = std::chrono::duration_cast<std::chrono::duration<double, std::ratio<1>>>(t2 - t1).count();
@@ -148,11 +142,11 @@ void SA_all(string esaFilename, r_index<> idx) {
 
 // generates however many samples we are looking to query.
 template<typename ri_t>
-void generateSamples(std::set<ulint> &samples, ulint amount, ri_t idx) {
-  cout << "generating samples:" << endl;
+void generate_samples(std::set<ulint> &samples, ulint amount, ri_t idx) {
+  // cout << "generating samples:" << endl;
   ulint min = 1;
   ulint max = idx.number_of_runs() - 1;
-  cout << "min: " << min << ", max: " << max << ", amount: " << amount << endl;
+  // cout << "min: " << min << ", max: " << max << ", amount: " << amount << endl;
 
   ulint seed = 2706265417;
   std::mt19937_64 generator(seed);
@@ -161,43 +155,62 @@ void generateSamples(std::set<ulint> &samples, ulint amount, ri_t idx) {
   while(samples.size() != amount)
     samples.insert(dist(generator));
 
-  cout << "done." << endl;
+  // cout << "done." << endl;
 }
 
-// filename: r-index | esaFilename: end samples | numSamples: how many we want to query
+// filename: r-index | esa_filename: end samples | num_samples: how many we want to query
 template<typename ri_t>
-void run(string filename, string esaFilename, ulint numSamples, uint sa_n) {
+void run(string filename, string esa_filename, ulint num_samples, uint sa_n) {
   ri_t idx;
   idx.load_from_file(filename.c_str());
-  std::set<ulint> querySamples;
-  generateSamples(querySamples, numSamples, idx);
+  ulint n = rle_bwt.size();
+  std::set<ulint> query_samples;
+  generate_samples(query_samples, num_samples, idx);
 
-  if(numSamples == 0) { // 0 means we query the whole index but if followed by a nonzero integer we query that value.
+  // 0 means we query the whole index but if followed by a nonzero integer we query that value.
+  if(num_samples == 0) {
     if(sa_n == 0) {
-      cout << "sa all!" << endl;
-      SA_all(esaFilename, idx);
+      cout << "\nsa all." << endl << endl;
+      query_all(esa_filename, idx);
     }
     else {
-      cout << "sa n!" << endl;
-      SA_n(esaFilename, idx, sa_n);
+      // cout << "\nsa n." << endl << endl;
+      bwt = idx.get_bwt();
+      rle_bwt = rle_string(bwt);
+      ulint n = rle_bwt.size();
+      get_esa(esa_filename, n, esa);
+      // ofstream samples;
+      // samples.open("../rasa_tests/samples.txt");
+      // for(size_t i = 0; i <= sa_n; i++) {
+      //   ulint query_result = query_n(esa_filename, idx, i);
+      //   cout << i << ": " << query_result;
+      //   // samples << query_result;
+      //   // samples << "\n";
+      // }
+      // samples.close();
+
+      ulint result = query_n(esa_filename, idx, sa_n);
+      cout << "sa[i]: " << result << endl;
     }
   }
   else {
-    SA(querySamples, esaFilename, idx);
+    query_random(query_samples, esa_filename, idx);
   }
 }
 
+// the issue with using a templated run in order to work with a hybrid r-index
+// is that they didn't have the same functions.
+// if(hyb)
+//   run<r_index<sparse_hyb_vector,rle_string_hyb>>(argv[1], argv[2],atoi(argv[3]));
 int main(int argc, char** argv) {
   int ptr = 1;
-  if(argc<2) help();
+  if(argc < 3) {
+    help();
+  }
 
-  while(ptr<argc-1)
+  while(ptr < (argc - 1)) {
     parse_args(argv, argc, ptr);
-
-  // the issue with using a templated run in order to work with a hybrid r-index
-  // is that they didn't have the same functions.
-  // if(hyb)
-  //   run<r_index<sparse_hyb_vector,rle_string_hyb>>(argv[1], argv[2],atoi(argv[3]));
+  }
 
   run<r_index<>>(argv[1], argv[2], atoi(argv[3]), atoi(argv[4]));
 }

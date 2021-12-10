@@ -139,9 +139,19 @@ public:
         assert(samples_last_vec.size() == r);
         cout << "done. " << endl<<endl;
 
-        for (size_t i = 0; i < 15; i++) {
+        for (size_t i = 0; i < 20; i++) {
           cout << samples_first_vec[i].first << " " << samples_last_vec[i] << endl;
         }
+
+        cout << endl;
+        cout << samples_first_vec[6].first << endl;
+        cout << samples_first_vec[5].first << endl;
+        cout << samples_first_vec[4].first << endl;
+        cout << samples_first_vec[3].first << endl;
+        cout << samples_first_vec[2].first << endl;
+        cout << samples_first_vec[1].first << endl;
+        cout << samples_first_vec[0].first << endl;
+        cout << samples_first_vec[30660767].first << endl;
 
         cout << "\n";
         cout << "(3/3) Building phi function ..." << flush;
@@ -152,9 +162,8 @@ public:
         cout << "(3.5/3) Building rads ..." << endl;
         rads rads_csa = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
         csa = rads_csa;
-        cout << "done." << endl;
-        // csa.print_tree_runs(unsorted_samples_first_vec, 0, 10);
-        //
+        cout << "done." << endl << endl;
+
         // cout << "(4/3) Query tests ..." << endl;
         // cout << "Trying to find sa_i = 6 ..." << endl;
         // cout << "query result: " << csa.query(6, bwt, pred_to_run, pred, samples_last_vec) << endl;
@@ -237,32 +246,34 @@ public:
         return {range1, k1};
     }
 
+    ulint query_csa(ulint sa_i) {
+      return csa.query(sa_i, bwt, pred_to_run, pred, samples_last);
+    }
+
     /*
      * Phi function. Phi(SA[0]) is undefined
      */
     ulint Phi(ulint i){
-        //cout << "\nphi call: " << endl;
+        // cout << "\tjr: " << jr << endl;
+        // cout << "\tj: " << j << endl;
+        // cout << "\tp2r: " << pred_to_run[jr] << endl;
+        // cout << "\tdelta: " << delta << endl;
+        // cout << "\tprev_s: " << prev_sample << endl;
+
         assert(i != bwt.size()-1);
-        //cout << "\ti: " << i << endl;
         //jr is the rank of the predecessor of i (circular)
         ulint jr = pred.predecessor_rank_circular(i);
-        cout << "\tjr: " << jr << endl;
         assert(jr<=r-1);
         //the actual predecessor
         ulint j = pred.select(jr);
-        cout << "\tj: " << j << endl;
         assert(jr<r-1 or j == bwt.size()-1);
         //distance from predecessor
         ulint delta = j<i ? i-j : i+1;
         //cannot fall on first run: this can happen only if I call Phi(SA[0])
         assert(pred_to_run[jr]>0);
-        cout << "\tp2r: " << pred_to_run[jr] << endl;
-        cout << "\tdelta: " << delta << endl;
         //sample at the end of previous run
         assert(pred_to_run[jr]-1 < samples_last.size());
         ulint prev_sample = samples_last[ pred_to_run[jr]-1 ];
-        cout << "\tprev_s: " << prev_sample << endl;
-        //cout << bwt.size() << endl;
         return (prev_sample + delta) % bwt.size();
     }
 
