@@ -63,13 +63,13 @@ void run(string filename,ulint num_samples) {
     ulint_sample = strtoul(string_sample.c_str(), NULL, 0);
     query_result = query_n(idx, i);
 
-    // if(query_result != ulint_sample) {
-    //   cout << "correct sample: " << ulint_sample << endl;
-    //   cout << "retrieved sample: " << query_result << endl;
-    // }
-    // else {
-      cout << i << ": " << query_result << endl;
-    // }
+    // assert(query_result == ulint_sample);
+
+    if(query_result != ulint_sample) {
+      cout << "index: " << i << endl;
+      cout << "correct sample: " << ulint_sample << endl;
+      cout << "retrieved sample: " << query_result << endl;
+    }
   }
 
   // query_result = query_n(idx, num_samples);

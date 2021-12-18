@@ -277,7 +277,6 @@ public:
     return sa_j;
   }
 
-  // args: sa_j & d (j-i) | returns: what do we need to return? just d?
   // replace in_cycle by using pred isntead of sa_map
   void helper_query(ulint &sa_j, ulint d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, int_vector<> &sa) {
     ulint sa_jr;
@@ -293,17 +292,15 @@ public:
       cost = sa_j - sa_prime; // distance between sample and predecessor
 
       cout << "\nsa_j: " << sa_j << endl;
-      // cout << "sa_jr: " << sa_jr << endl;
+      cout << "sa_jr: " << sa_jr << endl;
       cout << "sa_prime: " << sa_prime << endl;
-      // cout << "cost: " << cost << endl;
-      // cout << "d: " << d << endl;
+      cout << "cost: " << cost << endl;
+      cout << "d: " << d << endl;
 
       // cout << "----------------" << endl;
-      // cout << sa_map[sa_prime] << endl;
-      // cout << pred.predecessor_rank_circular(sa_prime) << endl;
-      // cout << pred_to_run[sa_j] << endl;
       // cout << pred_to_run[sa_jr] << endl;
-      // cout << pred_to_run[sa_prime] << endl;
+      // cout << "----------------" << endl;
+      // cout << in_cycle(pred_to_run[sa_jr]) << endl;
       // cout << "----------------" << endl;
 
       // check if pred is in a cycle
@@ -320,14 +317,16 @@ public:
         // cout << "delta: " << std::get<1>(sa_prime_d_cost) << endl;
         // cout << "cost: " << std::get<2>(sa_prime_d_cost) << endl;
 
-        run = std::get<0>(sa_prime_d_cost);
         sa_j = sa[std::get<0>(sa_prime_d_cost)] + std::get<2>(sa_prime_d_cost); // review these two // sa_j is being set as the new sample
+        run = pred_to_run[pred.predecessor_rank_circular(sa_j)];
+        // cout << "new run: " << run << endl;
+        // cout << "cumm. cost: " << std::get<2>(sa_prime_d_cost) << endl;
         // cout << "new sa_j: " << sa_j << endl;
         d = d - std::get<1>(sa_prime_d_cost); // this is the distance left over.
         // cout << "new d: " << d << endl;
       }
       else { // continue the iteration using phi
-        cout << "phi iteration" << endl;
+        // cout << "phi iteration" << endl;
         ulint delta = sa_prime < sa_j ? sa_j - sa_prime : sa_j + 1;
         ulint prev_sample = sa[pred_to_run[sa_jr] - 1]; // we dont have samples_last, need to pass it in.
         sa_j = (prev_sample + delta) % bwt.size();

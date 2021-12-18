@@ -58,16 +58,16 @@ ulint query_n(string esa_filename, r_index<> &idx, uint sa_n) {
   j = rle_bwt.run_range(run).second; // run ends at this value
   ulint phi_val = esa[run]; // end sample at specified run
 
-  cout << "run: " << run << endl;
-  cout << "run l: " << j << endl;
-  cout << "sample: " << phi_val << endl;
-  cout << "distance: " << j-sa_n << endl << endl;;
+  // cout << "run: " << run << endl;
+  // cout << "run l: " << j << endl;
+  // cout << "sample: " << phi_val << endl;
+  // cout << "distance: " << j-sa_n << endl << endl;;
 
   for (size_t iter = 0; iter < (j - sa_n); iter++) {
-    cout << phi_val << endl;
+    // cout << phi_val << endl;
     phi_val = idx.Phi(phi_val); // sa-1 until we find n (j-i times)
   }
-  
+
   return phi_val;
 }
 
@@ -179,18 +179,18 @@ void run(string filename, string esa_filename, ulint num_samples, uint sa_n) {
       rle_bwt = rle_string(bwt);
       ulint n = rle_bwt.size();
       get_esa(esa_filename, n, esa);
-      // ofstream samples;
-      // samples.open("../rasa_tests/samples.txt");
-      // for(size_t i = 0; i <= sa_n; i++) {
-      //   ulint query_result = query_n(esa_filename, idx, i);
-      //   cout << i << ": " << query_result;
-      //   // samples << query_result;
-      //   // samples << "\n";
-      // }
-      // samples.close();
+      ofstream samples;
+      samples.open("../rasa_tests/samples.txt");
+      for(size_t i = 0; i <= sa_n; i++) {
+        ulint query_result = query_n(esa_filename, idx, i);
+        // cout << i << ": " << query_result;
+        samples << query_result;
+        samples << "\n";
+      }
+      samples.close();
 
-      ulint result = query_n(esa_filename, idx, sa_n);
-      cout << "sa[i]: " << result << endl;
+      // ulint result = query_n(esa_filename, idx, sa_n);
+      // cout << "sa[i]: " << result << endl;
     }
   }
   else {

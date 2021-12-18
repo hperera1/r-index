@@ -108,7 +108,7 @@ public:
     // check if when we shift up we get to the root of the left subtree
     // meaning we can skip forward to the beginning of the right subtree and descend
     if(node_pos>>(__builtin_ctzl(~node_pos)) == 2) {
-      cout << "\nskipping to right subtree." << endl;
+      // cout << "\nskipping to right subtree." << endl;
       node_pos = 3;
       current_height = 1;
       descend(start_pos, node_pos, cost, d, current_height);
@@ -189,7 +189,7 @@ public:
           ulint min_node = (node_pos << (height - current_height));
           min_d_travelled = (int) calculate_d(start_pos, min_node);
           if(((int) d - min_d_travelled) < 0) {
-            cout << "gone too far." << endl;
+            // cout << "gone too far." << endl;
             node_pos -= 1;
             node_pos = node_pos << 1;
             node_pos += 1;
@@ -230,7 +230,7 @@ public:
     ulint min_node = (node_pos << (height - current_height));
     int min_d_travelled = (int) calculate_d(start_pos, min_node);
     if(((int) d - min_d_travelled) < 0) {
-      cout << "we go back one again." << endl;
+      // cout << "we go back one again." << endl;
       node_pos -= 1;
     }
 
