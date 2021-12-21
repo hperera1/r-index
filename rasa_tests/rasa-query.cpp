@@ -59,6 +59,10 @@ void run(string filename,ulint num_samples) {
   ulint ulint_sample;
   ulint query_result;
   for(size_t i = 0; i <= num_samples; i++) {
+    if(i == 542) {
+      cout << "break" << endl;
+    }
+
     getline(in_samples, string_sample);
     ulint_sample = strtoul(string_sample.c_str(), NULL, 0);
     query_result = query_n(idx, i);
@@ -72,6 +76,7 @@ void run(string filename,ulint num_samples) {
     }
   }
 
+  cout << "all good!" << endl;
   // query_result = query_n(idx, num_samples);
   // cout << "result: " << query_result << endl;
 }

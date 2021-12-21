@@ -105,32 +105,40 @@ public:
       current_height -= 1;
     }
 
-    // check if when we shift up we get to the root of the left subtree
-    // meaning we can skip forward to the beginning of the right subtree and descend
-    if(node_pos>>(__builtin_ctzl(~node_pos)) == 2) {
-      // cout << "\nskipping to right subtree." << endl;
-      node_pos = 3;
-      current_height = 1;
-      descend(start_pos, node_pos, cost, d, current_height);
-      ulint distance = calculate_d(start_pos, node_pos);
-      ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
-      return (std::make_tuple(leaf_samples[leaf_sample_index], distance, cost)); // return new sample and new distance
-    }
-
     ulint shifts = 0;
     int max_d_travelled = 0;
-    int last_bit = (node_pos & 1);
     while(((node_pos != 1) && (tree[node_pos].second > 0) && (cost < tree[node_pos].second)) || leaf_node_bv[node_pos]) { // climb up while the upper_bounds let us
+      int last_bit = (node_pos & 1);
       int distance_diff = (int) d - max_d_travelled;
       if(distance_diff <= 0) {
         // this means that the sample we are looking for is in the current interval that we are covering
         // if this is true then we should start descending from this node
         // cout << "max_d check true" << endl;
-        cost += tree[node_pos << 1].first; // add cost of node that denies us
-        node_pos = (node_pos << 1) + 1; // move node_pos to the right child of the current node
-        current_height += 1;
+        if(leaf_node_bv[node_pos]) {
+          cost += tree[(node_pos << 1) - 1].first;
+          ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
+          ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
+          return (std::make_tuple(leaf_samples[leaf_sample_index], distance, cost)); // return new sample and new distance
+        }
+        else {
+          cost += tree[node_pos << 1].first; // add cost of node that denies us
+          node_pos = (node_pos << 1) + 1; // move node_pos to the right child of the current node
+          current_height += 1;
+          descend(start_pos, node_pos, cost, d, current_height);
+          ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
+          ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
+          return (std::make_tuple(leaf_samples[leaf_sample_index], distance, cost)); // return new sample and new distance
+        }
+      }
+
+      // check if when we shift up we get to the root of the left subtree
+      // meaning we can skip forward to the beginning of the right subtree and descend
+      if(node_pos>>(__builtin_ctzl(~node_pos)) == 2) {
+        // cout << "\nskipping to right subtree." << endl;
+        node_pos = 3;
+        current_height = 1;
         descend(start_pos, node_pos, cost, d, current_height);
-        ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
+        ulint distance = calculate_d(start_pos, node_pos);
         ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
         return (std::make_tuple(leaf_samples[leaf_sample_index], distance, cost)); // return new sample and new distance
       }
@@ -163,24 +171,13 @@ public:
   // during the descent the node_pos gets shifted around so that calculate_d can do its job
   // args: node_pos: current node_pos, cost: cumulated cost, d: distance of where we came in from to the sample we're looking for.
   void descend(ulint start_pos, ulint &node_pos, uint &cost, uint d, ulint current_height) {
-    // 1. check node_pos that is passed in
-    // 2. if YAY then check your immediate sibling
-    // 3. if NAY then check left child until you get a green light
-    // cout << "\ndescending." << endl;
-    // cout << "start pos: " << start_pos << endl;
-    // cout << "node pos: " << node_pos << endl;
-    // cout << "d: " << d << endl;
-    // cout << "current height: " << current_height << endl;
-
-    while((node_pos < leaf_node_bv.size()) && !leaf_node_bv[node_pos]) { // while we are not at a leaf node
+    while((node_pos < leaf_node_bv.size()) && !leaf_node_bv[node_pos]) { // while we are in the bounds of the tree and not at a leaf node
       // check min_d_travelled before descending to the next node
       // if its < 0 then that means we have moved past the interval our sample is contained in. if this is the case go to our left sibling
       // cout << "testing end_pos: " << (node_pos << (height - current_height)) << endl;
       // cout << "new node pos: " << node_pos << endl;
       int min_d_travelled;
       int last_bit = (node_pos & 1);
-      // cout << "last_bit: " << last_bit << endl;
-
       if(last_bit == 0) { // this means we are at a left child node
         // cout << "left node." << endl;
         if((tree[node_pos].second > 0) && (cost < tree[node_pos].second)) { // if good -> go to right sibling
@@ -210,14 +207,16 @@ public:
         // cout << "right node." << endl;
         if((tree[node_pos].second > 0) && (cost < tree[node_pos].second)) { // if good -> go to right child
           // cout << "go to right child." << endl;
-          current_height += 1;
-          node_pos = (node_pos << 1) + 1;
           ulint min_node = (node_pos << (height - current_height));
           min_d_travelled = (int) calculate_d(start_pos, min_node);
           if(((int) d - min_d_travelled) < 0) {
-            // cout << "right child doesn't have sample. go to left child." << endl;
+            // right node doesn't have sample. go to left child
             node_pos -= 1;
+            continue;
           }
+
+          current_height += 1;
+          node_pos = (node_pos << 1) + 1;
         }
         else {
           // cout << "go to left child." << endl;
@@ -232,10 +231,19 @@ public:
     if(((int) d - min_d_travelled) < 0) {
       // cout << "we go back one again." << endl;
       node_pos -= 1;
+      descend(start_pos, node_pos, cost, d, current_height);
     }
 
     // cout << "node pos after shifts: " << node_pos << endl;
   }
+
+  void left_climb() {}
+
+  void left_descend() {}
+
+  void right_climb() {}
+
+  void right_descend() {}
 
   // calculates the distance between leaf nodes: start_pos and end_pos. distance meaning the number of leaf nodes between these two indices.
   ulint calculate_d(ulint start_pos, ulint end_pos) {

@@ -265,10 +265,10 @@ public:
     ulint run_l = bwt.run_range(run).second;
     ulint sa_j = sa[run]; // sa value at position 'run'
 
-    cout << "\nrun: " << run << endl;
-    cout << "run l: " << run_l << endl;
-    cout << "sample: " << sa_j << endl;
-    cout << "distance: " << run_l-sa_i << endl;
+    // cout << "\nrun: " << run << endl;
+    // cout << "run l: " << run_l << endl;
+    // cout << "sample: " << sa_j << endl;
+    // cout << "distance: " << run_l-sa_i << endl;
 
     // cout << endl;
     // trees[0].print_tree_info();
@@ -291,11 +291,11 @@ public:
       sa_prime = pred.select(sa_jr); // actual predecessor of sa_j
       cost = sa_j - sa_prime; // distance between sample and predecessor
 
-      cout << "\nsa_j: " << sa_j << endl;
-      cout << "sa_jr: " << sa_jr << endl;
-      cout << "sa_prime: " << sa_prime << endl;
-      cout << "cost: " << cost << endl;
-      cout << "d: " << d << endl;
+      // cout << "\nsa_j: " << sa_j << endl;
+      // cout << "sa_jr: " << sa_jr << endl;
+      // cout << "sa_prime: " << sa_prime << endl;
+      // cout << "cost: " << cost << endl;
+      // cout << "d: " << d << endl;
 
       // cout << "----------------" << endl;
       // cout << pred_to_run[sa_jr] << endl;
@@ -305,9 +305,9 @@ public:
 
       // check if pred is in a cycle
       if(in_cycle(pred_to_run[sa_jr]) && d != 1) { // dont need to use sa_prime, you can use sa_jr because the rank tells you what index to query
-        // cout << "cycle" << endl;
+        run = pred_to_run[sa_jr];
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)]; // get tree sample belongs to.
-        cout << "\nsample run: " << std::get<0>(tree_info) << ", sample tree: " << std::get<1>(tree_info) << ", sample leaf: " << std::get<2>(tree_info) << endl;
+        // cout << "\nsample run: " << std::get<0>(tree_info) << ", sample tree: " << std::get<1>(tree_info) << ", sample leaf: " << std::get<2>(tree_info) << endl;
         // cout << "leaf: " << std::get<2>(tree_info) << endl;
         // trees[std::get<1>(tree_info)].print_tree_info();
         std::tuple<ulint, ulint, ulint> sa_prime_d_cost = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d); // tuple containing new sample run, distance travelled, and cost accumulated

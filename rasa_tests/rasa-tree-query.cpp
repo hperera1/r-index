@@ -27,13 +27,29 @@ int main() {
   std::vector<ulint> tree_1 = {26, 3, 11, 20, 0, 17};
   std::vector<std::pair<ulint, ulint>> tree_1_bounds = {{5,1}, {0,6}, {0,3}, {2,1}, {0,3}, {4,1}};
 
+  std::vector<ulint> tree_2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+  std::vector<std::pair<ulint, ulint>> tree_2_bounds = {{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
+
+  std::vector<ulint> tree_3 = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+  std::vector<std::pair<ulint, ulint>> tree_3_bounds = {{0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}, {0,1}};
+
+  std::vector<ulint> tree_4;
+  std::vector<std::pair<ulint, ulint>> tree_4_bounds;
+  for(size_t i = 0; i <= 123; i++) {
+    tree_4.push_back(i);
+    tree_4_bounds.push_back(std::make_pair(0,1));
+  }
+
   trees.push_back(rads_tree(tree_0, tree_0_bounds, 0, tree_pointers));
   trees.push_back(rads_tree(tree_1, tree_1_bounds, 1, tree_pointers));
+  trees.push_back(rads_tree(tree_2, tree_2_bounds, 2, tree_pointers));
+  trees.push_back(rads_tree(tree_3, tree_3_bounds, 3, tree_pointers));
+  trees.push_back(rads_tree(tree_4, tree_4_bounds, 4, tree_pointers));
 
   std::tuple<ulint, ulint, ulint> sample_and_delta;
   // traversal test without bounds
   for(size_t i = 1; i <= 7; i++) {
-    sample_and_delta = trees[0].query(8, 0, i);
+    sample_and_delta = trees[0].query(trees[0].left_most_i, 0, i);
     assert(std::get<0>(sample_and_delta) == i);
   }
 
@@ -44,6 +60,9 @@ int main() {
   sample_and_delta = trees[1].query(8, 0, 2);
   assert(std::get<0>(sample_and_delta) == 11);
 
+  sample_and_delta = trees[1].query(9, 0, 1);
+  assert(std::get<0>(sample_and_delta) == 11);
+
   sample_and_delta = trees[1].query(5, 0, 1);
   assert(std::get<0>(sample_and_delta) == 20);
 
@@ -52,6 +71,32 @@ int main() {
 
   sample_and_delta = trees[1].query(5, 0, 3);
   assert(std::get<0>(sample_and_delta) == 17);
+
+  for(size_t i = 1; i <= 13; i++) {
+    sample_and_delta = trees[2].query(trees[2].left_most_i, 0, i);
+    assert(std::get<0>(sample_and_delta) == i);
+  }
+
+  for(size_t i = 1; i <= 8; i++) {
+    sample_and_delta = trees[3].query(trees[3].left_most_i, 0, i);
+    assert(std::get<0>(sample_and_delta) == i);
+  }
+
+  for(size_t i = 1; i <= 123; i++) {
+    sample_and_delta = trees[4].query(trees[4].left_most_i, 0, i);
+    assert(std::get<0>(sample_and_delta) == i);
+  }
+
+  for(size_t i = 0; i < trees[4].leaf_node_bv.size(); i++) {
+    if(trees[4].leaf_node_bv[i] == 1) {
+      ulint node_distance = trees[4].calculate_d(trees[4].left_most_i, i);
+      ulint samples_left = 123 - node_distance;
+      for(size_t j = 1; j <= samples_left; j++) {
+        sample_and_delta = trees[4].query(i, 0, j);
+        assert(std::get<0>(sample_and_delta) == (node_distance + j));
+      }
+    }
+  }
 
   cout << "all good!" << endl;
 

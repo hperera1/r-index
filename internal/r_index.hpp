@@ -139,19 +139,9 @@ public:
         assert(samples_last_vec.size() == r);
         cout << "done. " << endl<<endl;
 
-        for (size_t i = 0; i < 20; i++) {
-          cout << samples_first_vec[i].first << " " << samples_last_vec[i] << endl;
+        for (size_t i = 0; i < 60; i++) {
+          cout << i << ": " << samples_first_vec[i].first << " " << samples_last_vec[i] << endl;
         }
-
-        cout << endl;
-        cout << samples_first_vec[6].first << endl;
-        cout << samples_first_vec[5].first << endl;
-        cout << samples_first_vec[4].first << endl;
-        cout << samples_first_vec[3].first << endl;
-        cout << samples_first_vec[2].first << endl;
-        cout << samples_first_vec[1].first << endl;
-        cout << samples_first_vec[0].first << endl;
-        cout << samples_first_vec[30660767].first << endl;
 
         cout << "\n";
         cout << "(3/3) Building phi function ..." << flush;
