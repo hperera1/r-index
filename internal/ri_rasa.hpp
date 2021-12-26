@@ -13,8 +13,8 @@
 using namespace sdsl;
 
 // temp notes for me:
-// - pred_to_run is basically sa_map so that is to be removed
-// - do we need to do < or <= when checking the costs
+// - pred_to_run is basically sa_map so that means it can be removed
+// - we need to do < for checking the costs because of the fact that we are counting them along the way.
 
 namespace ri {
   template<class sparse_bv_type = sparse_sd_vector,
@@ -255,7 +255,7 @@ public:
     \param pred_to_run Bitvector used to find the run a particular predecessor is stored.
     \param sa Suffix array to query.
   */
-  ulint query(ulint sa_i, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, int_vector<> &sa) { // std::vector<ulint> &sa
+  ulint query(ulint sa_i, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, int_vector<> &sa, std::vector<ulint> &ssa) { // std::vector<ulint> &sa
     // pass pred into the query helper
     // is pred in a cycle -> bv check
     // if so use tree, else use phi
@@ -273,12 +273,12 @@ public:
     // cout << endl;
     // trees[0].print_tree_info();
 
-    helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, sa); // after helper_query, sa_j will be the sample when we are done querying.
+    helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, sa, ssa); // after helper_query, sa_j will be the sample when we are done querying.
     return sa_j;
   }
 
   // replace in_cycle by using pred isntead of sa_map
-  void helper_query(ulint &sa_j, ulint d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, int_vector<> &sa) {
+  void helper_query(ulint &sa_j, ulint d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, int_vector<> &sa, std::vector<ulint> &ssa) {
     ulint sa_jr;
     ulint sa_prime;
     ulint cost;
@@ -287,7 +287,7 @@ public:
     // trees[0].print_tree_info();
 
     while(d > 0) {
-      sa_jr = pred.predecessor_rank_circular(sa_j); // sample predecessor run
+      sa_jr = pred.predecessor_rank_circular(sa_j); // sample predecessor rank (run?)
       sa_prime = pred.select(sa_jr); // actual predecessor of sa_j
       cost = sa_j - sa_prime; // distance between sample and predecessor
 
@@ -306,7 +306,7 @@ public:
       // check if pred is in a cycle
       if(in_cycle(pred_to_run[sa_jr]) && d != 1) { // dont need to use sa_prime, you can use sa_jr because the rank tells you what index to query
         run = pred_to_run[sa_jr];
-        std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)]; // get tree sample belongs to.
+        std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)]; // get the tree that the sample belongs to.
         // cout << "\nsample run: " << std::get<0>(tree_info) << ", sample tree: " << std::get<1>(tree_info) << ", sample leaf: " << std::get<2>(tree_info) << endl;
         // cout << "leaf: " << std::get<2>(tree_info) << endl;
         // trees[std::get<1>(tree_info)].print_tree_info();
@@ -317,7 +317,9 @@ public:
         // cout << "delta: " << std::get<1>(sa_prime_d_cost) << endl;
         // cout << "cost: " << std::get<2>(sa_prime_d_cost) << endl;
 
-        sa_j = sa[std::get<0>(sa_prime_d_cost)] + std::get<2>(sa_prime_d_cost); // review these two // sa_j is being set as the new sample
+        sa_j = ssa[std::get<0>(sa_prime_d_cost)] + std::get<2>(sa_prime_d_cost); // review these two // sa_j is being set as the new sample
+        // ulint sa_jtest = ssa[std::get<0>(sa_prime_d_cost)];
+        // sa_jtest += std::get<2>(sa_prime_d_cost);
         run = pred_to_run[pred.predecessor_rank_circular(sa_j)];
         // cout << "new run: " << run << endl;
         // cout << "cumm. cost: " << std::get<2>(sa_prime_d_cost) << endl;
@@ -330,6 +332,7 @@ public:
         ulint delta = sa_prime < sa_j ? sa_j - sa_prime : sa_j + 1;
         ulint prev_sample = sa[pred_to_run[sa_jr] - 1]; // we dont have samples_last, need to pass it in.
         sa_j = (prev_sample + delta) % bwt.size();
+        run = pred_to_run[pred.predecessor_rank_circular(sa_j)];
         d -= 1;
       }
     }

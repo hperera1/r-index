@@ -1,9 +1,10 @@
+// driver file to query an r-index using only phi.
+
 #include <iostream>
 #include <random>
 #include <set>
 #include <cstring>
 #include <string>
-
 #include "internal/rle_string.hpp"
 #include "internal/r_index.hpp"
 #include "internal/utils.hpp"
@@ -179,11 +180,17 @@ void run(string filename, string esa_filename, ulint num_samples, uint sa_n) {
       rle_bwt = rle_string(bwt);
       ulint n = rle_bwt.size();
       get_esa(esa_filename, n, esa);
+      for(size_t i = 140; i <= 170; i++) {
+        cout << i << ": " << esa[i] << endl;
+      }
+
+      cout << "sa[21652738]: " << esa[21652738] << endl;
+
       // ofstream samples;
       // samples.open("../rasa_tests/samples.txt");
       // for(size_t i = 0; i <= sa_n; i++) {
-        ulint query_result = query_n(esa_filename, idx, sa_n);
-        cout << query_result << endl;
+        // ulint query_result = query_n(esa_filename, idx, sa_n);
+        // cout << query_result << endl;
         // cout << i << ": " << query_result;
         // samples << query_result;
         // samples << "\n";

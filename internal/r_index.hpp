@@ -236,8 +236,8 @@ public:
         return {range1, k1};
     }
 
-    ulint query_csa(ulint sa_i) {
-      return csa.query(sa_i, bwt, pred_to_run, pred, samples_last);
+    ulint query_csa(ulint sa_i, std::vector<ulint> &ssa) {
+      return csa.query(sa_i, bwt, pred_to_run, pred, samples_last, ssa);
     }
 
     /*
