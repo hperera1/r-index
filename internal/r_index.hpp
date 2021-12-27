@@ -139,7 +139,7 @@ public:
         assert(samples_last_vec.size() == r);
         cout << "done. " << endl<<endl;
 
-        for (size_t i = 0; i < 60; i++) {
+        for (size_t i = 130; i < 160; i++) {
           cout << i << ": " << samples_first_vec[i].first << " " << samples_last_vec[i] << endl;
         }
 
@@ -244,12 +244,6 @@ public:
      * Phi function. Phi(SA[0]) is undefined
      */
     ulint Phi(ulint i){
-        // cout << "\tjr: " << jr << endl;
-        // cout << "\tj: " << j << endl;
-        // cout << "\tp2r: " << pred_to_run[jr] << endl;
-        // cout << "\tdelta: " << delta << endl;
-        // cout << "\tprev_s: " << prev_sample << endl;
-
         assert(i != bwt.size()-1);
         //jr is the rank of the predecessor of i (circular)
         ulint jr = pred.predecessor_rank_circular(i);

@@ -66,9 +66,11 @@ public:
   void constructor_helper(std::vector<std::pair<ulint, ulint>> &bounds, size_t node, size_t begin, size_t end, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers, std::vector<bool> &leaf_bv) {
     size_t mid = (begin + end)/2;
     if(begin >= end) { // condition which creates the leaf nodes.
-      tree[node].first = (long long int)bounds[begin].first; // edge cost
-      tree[node].second = (long long int)bounds[begin].second; // edge threshold
-      tree_pointers.push_back(std::make_tuple(leaf_samples[begin], tree_num, node));
+      tree[node].first = (long long int)bounds[leaf_samples[begin]].first; // edge cost
+      tree[node].second = (long long int)bounds[leaf_samples[begin]].second; // edge threshold
+      if(begin != leaf_samples.size()-1) { // if it is not the last sample in the tree, add a tree pointer to be used when querying
+        tree_pointers.push_back(std::make_tuple(leaf_samples[begin], tree_num, node));
+      }
       leaf_bv[node] = true;
       return;
     }
@@ -100,6 +102,7 @@ public:
     ulint current_height = height; // we always enter at a leaf node so we are at level with the height of the tree
     ulint start_pos = node_pos;
     ulint prev_pos = node_pos;
+    ulint current_leftmost_node = (node_pos << (height - current_height));
 
     if((node_pos << 1) < tree.size()) { // this means that we are actually at height - 1 because we entered from a leaf node one height up.
       // cout << "height adjusted." << endl;
@@ -156,6 +159,11 @@ public:
       }
 
       current_height -= 1;
+      if((node_pos << (height - current_height)) != current_leftmost_node) {
+        cost += tree[prev_pos].first;
+        current_leftmost_node = (node_pos << (height - current_height));
+      }
+
       ulint max_node_pos = ((node_pos << (height - current_height)) + ((1 << (height - current_height)) - 1));
       ulint max_d = calculate_d(start_pos, max_node_pos); // (node_pos gets shifted by the distance to the leaves) + (1 shifted that many times left - 1)
       max_d_travelled = (int) max_d;
@@ -230,7 +238,7 @@ public:
         // cout << "right node." << endl;
         if((tree[node_pos].second > 0) && (cost < tree[node_pos].second)) { // if good -> go to right child
           // cout << "go to right child." << endl;
-          ulint min_node = (node_pos << (height - current_height));
+          ulint min_node = (node_pos << (height - current_height)); // this is how you can get the left mode node of the current subtree
           min_d_travelled = (int) calculate_d(start_pos, min_node);
           if(((int) d - min_d_travelled) < 0) {
             // right node doesn't have sample. go to left child

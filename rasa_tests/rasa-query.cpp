@@ -75,9 +75,9 @@ void run(string filename, string ssa_filename, ulint num_samples) {
   ulint ulint_sample;
   ulint query_result;
   for(size_t i = 0; i <= num_samples; i++) {
-    if(i == 542) {
-      cout << "break" << endl;
-    }
+    // if(i == 546) {
+    //   cout << "break" << endl;
+    // }
 
     getline(in_samples, string_sample);
     ulint_sample = strtoul(string_sample.c_str(), NULL, 0);

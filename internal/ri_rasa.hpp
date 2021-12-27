@@ -158,6 +158,7 @@ public:
         ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
         ulint predecessor = pred.select(successor_rank - 1);
         ulint successor = 0;
+        ulint sa_index = phi_x_inv[esa_sorted[j]];
         if(successor_rank >= pred.number_of_1()) { // this case happens when we are getting the successor of the largest sample
           successor = predecessor + 1; // if true, then successor is just one bigger because the cost will be 1
         }
@@ -165,7 +166,12 @@ public:
           successor = pred.select(successor_rank);
         }
 
-        sa_graph[phi_x_inv[esa_sorted[j]]] = curr_pred; // sample -> curr_pred
+        if(ssa[i - 1].first == 12255050) {
+          cout << "break" << endl;
+          cout << phi_x_inv[esa_sorted[j]] << endl;
+        }
+
+        sa_graph[sa_index] = curr_pred; // sample -> curr_pred
         bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first; // lower_bound
         bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor; // upper_bound
         j += 1;
@@ -181,6 +187,7 @@ public:
       ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
       ulint predecessor = pred.select(successor_rank - 1);
       ulint successor = 0;
+      ulint sa_index = phi_x_inv[esa_sorted[j]];
       if(successor_rank >= pred.number_of_1()) {
         successor = predecessor + 1;
       }
@@ -188,7 +195,7 @@ public:
         successor = pred.select(successor_rank);
       }
 
-      sa_graph[phi_x_inv[esa_sorted[j]]] = curr_pred;
+      sa_graph[sa_index] = curr_pred;
       bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first;
       bounds[phi_x_inv[esa_sorted[j]]].second = successor - predecessor;
       j += 1;
@@ -202,13 +209,13 @@ public:
     auto temp_trees_bv = vector<bool>(sa_graph.size(), false);
 
     // counting indegrees of the nodes
-    for(size_t i = 0; i < sa_graph.size(); i++) {
+    for(size_t i = 1; i < sa_graph.size(); i++) {
       if(sa_graph[i] >= 0)
         indegrees[sa_graph[i]] += 1;
     }
 
-    // for all nodes with indegree 0, we check if they are a cycle.
-    for(size_t i = 0; i < sa_graph.size(); i++) {
+    // for all nodes with indegree 0, we check if they contain a cycle.
+    for(size_t i = 1; i < sa_graph.size(); i++) {
       if(indegrees[i] == 0) {
         std::vector<ulint> current_path;
         int u = i;
@@ -216,7 +223,7 @@ public:
         visited[u] = true;
         current_path.push_back(u);
 
-        while(visited[v] == false) {
+        while(visited[v] == false && v != 0) {
           current_path.push_back(v);
           visited[v] = true;
           v = sa_graph[v];
@@ -234,8 +241,9 @@ public:
         if(is_cycle) { // if the path is a cycle we construct a tree
           rads_tree branch = rads_tree(current_path, bounds, trees.size(), tree_pointers);
           trees.push_back(branch);
-          for(size_t i = 0; i < current_path.size()-1; i++) // -1 because the the last leaf node in our cycle is useless for queries
+          for(size_t i = 0; i < current_path.size()-1; i++) { // -1 because the the last leaf node in our cycle is useless for queries
             temp_trees_bv[current_path[i]] = true; // set the nodes that are in the cycle to true in our bitvector
+          }
         }
       }
     }
