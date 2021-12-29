@@ -182,7 +182,7 @@ void run(string filename, string esa_filename, ulint num_samples, uint sa_n) {
       get_esa(esa_filename, n, esa);
       // cout << "esa size: " << esa.size() << endl;
       // cout << "bwt size: " << n << endl;
-      // for(size_t i = 140; i <= 170; i++) {
+      // for(size_t i = 230; i <= 280; i++) {
       //   cout << i << ": " << esa[i] << endl;
       // }
       //
