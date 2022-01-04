@@ -179,6 +179,9 @@ public:
           current_height += 1;
         }
         else {
+          node_pos = (node_pos << 1) + 1; // once we find a bound that were allowed to go through lets just go to the right child (or should it be the left child)
+          current_height += 1;
+          cost += tree[node_pos - 1].first;
           descend(start_pos, node_pos, cost, d, current_height); // descend using new node_pos, cost, and d
           break;
         }
@@ -259,6 +262,20 @@ public:
 
     ulint min_node = (node_pos << (height - current_height));
     int min_d_travelled = (int) calculate_d(start_pos, min_node);
+    ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
+
+    ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
+    if((leaf_sample_index == (leaf_samples.size() - 1)) && (distance != 1)) { // this means were leaving off on the last samples which seems to be wrong?
+      node_pos -= 1;
+      cost -= tree[node_pos].first;
+      if(!leaf_node_bv[node_pos]) { // if this is not a leaf node then go to its right child
+        node_pos = (node_pos << 1) + 1;
+        cost += tree[node_pos - 1].first; // add the cost of our left sibling
+        current_height += 1;
+      }
+      descend(start_pos, node_pos, cost, d, current_height);
+    }
+
     if(((int) d - min_d_travelled) < 0) {
       // cout << "we go back one again." << endl;
       node_pos -= 1;

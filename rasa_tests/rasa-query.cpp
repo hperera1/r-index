@@ -75,7 +75,13 @@ void run(string filename, string ssa_filename, ulint num_samples) {
   ulint ulint_sample;
   ulint query_result;
   for(size_t i = 0; i <= num_samples; i++) {
-    if(i == 4153138) {
+    if(i == 14700902) {
+      cout << "break" << endl;
+    }
+    if(i == 11712833) {
+      cout << "break" << endl;
+    }
+    if(i == 10588843) {
       cout << "break" << endl;
     }
 
