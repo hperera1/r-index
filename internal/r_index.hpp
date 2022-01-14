@@ -178,10 +178,16 @@ public:
         cout << "log2(r) = " << log2(double(r)) << endl;
         cout << "log2(n/r) = " << log2(double(bwt.size())/r) << endl << endl;
 
-        // build_phi sorts the start samples | i assume that phi_inverse would sort the end samples.
+        cout << "\n";
         cout << "(3/3) Building phi function ..." << flush;
-        build_phi(samples_first_vec, samples_last_vec);
-        cout << " done. " << endl<<endl;
+        std::vector<std::pair<ulint, ulint>> unsorted_samples_first_vec = samples_first_vec; // we need an unsorted ssa temporarily
+        build_phi(samples_first_vec, samples_last_vec); //
+        cout << " done. " << endl << endl;
+
+        cout << "(3.5/3) Building rads ..." << endl;
+        rads rads_csa = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
+        csa = rads_csa;
+        cout << "done." << endl << endl;
     }
 
     /*

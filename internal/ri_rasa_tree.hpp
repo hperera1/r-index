@@ -114,6 +114,15 @@ public:
     while(((node_pos != 1) && (tree[node_pos].second > 0) && (cost < tree[node_pos].second)) || (start_pos == node_pos)) { // climb up while the upper_bounds let us
       int distance_diff = (int) d - max_d_travelled;
       last_bit = (node_pos & 1);
+
+      // if we are on the right most nodes do not climb anymore, that's just not possible.
+      if(__builtin_ctzl(~node_pos) == (current_height + 1)) {
+        descend(start_pos, node_pos, cost, d, current_height);
+        ulint distance = calculate_d(start_pos, node_pos);
+        ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
+        return (std::make_tuple(leaf_samples[leaf_sample_index], distance, cost)); // return new sample and new distance
+      }
+
       if(distance_diff <= 0) {
         // this means that the sample we are looking for is in the current interval that we are covering
         // if this is true then we should start descending from this node
