@@ -97,7 +97,7 @@ public:
     ulint start_pos = node_pos;
     ulint prev_pos = node_pos;
 
-    if(node_pos - left_most_i) {
+    if(node_pos < left_most_i) {
       current_height -= 1;
     }
 
@@ -258,7 +258,7 @@ public:
     int min_d_travelled = (int) calculate_d(start_pos, min_node);
     ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
     ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
-    
+
     if((leaf_sample_index == (leaf_samples.size() - 1)) && (distance != 1)) { // this means were leaving off on the last samples which seems to be wrong?
       node_pos -= 1;
       cost -= tree[node_pos].first;
