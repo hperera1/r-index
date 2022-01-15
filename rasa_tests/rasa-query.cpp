@@ -87,7 +87,22 @@ void run(string filename, string ssa_filename, ulint num_samples) {
     if(i == 17675849) {
       cout << "break" << endl;
     }
+    if(i == 20505162) {
+      cout << "break" << endl;
+    }
     if(i == 20851724) {
+      cout << "break" << endl;
+    }
+    if(i == 24248872) {
+      cout << "break" << endl;
+    }
+    if(i == 24321815) {
+      cout << "break" << endl;
+    }
+    if(i == 27643627) {
+      cout << "break" << endl;
+    }
+    if(i == 28080062) {
       cout << "break" << endl;
     }
 
