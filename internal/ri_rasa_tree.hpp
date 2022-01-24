@@ -254,11 +254,8 @@ public:
       }
     }
 
-    ulint min_node = (node_pos << (height - current_height));
-    int min_d_travelled = (int) calculate_d(start_pos, min_node);
     ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
     ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
-
     if((leaf_sample_index == (leaf_samples.size() - 1)) && (distance != 1)) { // this means were leaving off on the last samples which seems to be wrong?
       node_pos -= 1;
       cost -= tree[node_pos].first;
@@ -271,6 +268,8 @@ public:
       descend(start_pos, node_pos, cost, d, current_height);
     }
 
+    ulint min_node = (node_pos << (height - current_height));
+    int min_d_travelled = (int) calculate_d(start_pos, min_node);
     if(((int) d - min_d_travelled) < 0) {
       node_pos -= 1;
       cost -= tree[node_pos].first;

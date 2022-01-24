@@ -53,20 +53,20 @@ int main() {
 
   std::tuple<ulint, ulint, ulint> sample_and_delta;
   // retrieve every sample using the left most sample.
-  for(size_t i = 1; i <= 7; i++) {
+  for(size_t i = 1; i <= 6; i++) {
     sample_and_delta = trees[0].query(trees[0].left_most_i, 0, i);
     assert(std::get<0>(sample_and_delta) == i);
   }
 
   // couple of tests to see if we get the samples that we expect from the tree with bounds.
   sample_and_delta = trees[1].query(8, 0, 1);
-  assert((std::get<0>(sample_and_delta) + std::get<2>(sample_and_delta)) == 8);
+  assert((std::get<0>(sample_and_delta) + std::get<2>(sample_and_delta)) == 3);
 
   sample_and_delta = trees[1].query(8, 0, 2);
-  assert((std::get<0>(sample_and_delta) + std::get<2>(sample_and_delta)) == 16);
+  assert((std::get<0>(sample_and_delta) + std::get<2>(sample_and_delta)) == 13);
 
   sample_and_delta = trees[1].query(9, 0, 1);
-  assert((std::get<0>(sample_and_delta) + std::get<2>(sample_and_delta)) == 11);
+  assert((std::get<0>(sample_and_delta) + std::get<2>(sample_and_delta)) == 13);
 
   sample_and_delta = trees[1].query(5, 0, 1);
   assert(std::get<0>(sample_and_delta) == 20);

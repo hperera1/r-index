@@ -139,7 +139,7 @@ public:
 
     cout << "Building SA map ..." << endl;
     for(ulint i = 0; i < esa.size(); i++) {
-      sa_map[unsorted_ssa[i].first] = i; // sa_map just assignes run values to the ssa samples
+      sa_map[unsorted_ssa[i].first] = i; // sa_map just assigns run values to the ssa samples
       if(i > 0) {
         phi_x_inv[esa[i - 1]] = i; // array to tell you which samples phi takes you to
       }
