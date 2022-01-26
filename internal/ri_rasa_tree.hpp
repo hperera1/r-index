@@ -26,6 +26,9 @@ public:
     leaf_samples = cycle; // store the samples in the cycle
     tree = std::vector<std::pair<long long int, long long int>>((size_t)1<<(size_t)(height + 1), std::make_pair(-1, 0)); // tree size initialization, default the costs to -1
     auto temp_leaf_bv = vector<bool>(tree.size(), false);
+    if(tree_num == 29) {
+      cout << "break" << endl;
+    }
 
     constructor_helper(bounds, 1, 0, n - 1, tree_num, tree_pointers, temp_leaf_bv);
     leaf_node_bv = sparse_bv_type(temp_leaf_bv);
@@ -237,8 +240,9 @@ public:
           min_d_travelled = (int) calculate_d(start_pos, min_node);
 
           if(((int) d - min_d_travelled) < 0) {
-            // right node doesn't have sample. go to left child
+            // right node doesn't have sample. go back to left child
             node_pos -= 1;
+            cost -= tree[node_pos].first;
             continue;
           }
 

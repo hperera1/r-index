@@ -55,12 +55,18 @@ ulint query_n(string esa_filename, r_index<> &idx, uint sa_n) {
   ulint run;
   r = esa.size();
 
+  cout << "\n";
+  cout << idx.Phi(39870830) << endl;
+  cout << idx.Phi(39870831) << endl;
+  cout << idx.Phi(39870832) << endl;
+  cout << "\n";
+  
   run = rle_bwt.run_of_position(sa_n); // run number
   j = rle_bwt.run_range(run).second; // run ends at this value
   ulint phi_val = esa[run]; // end sample at specified run
 
   for (size_t iter = 0; iter < (j - sa_n); iter++) {
-    // cout << phi_val << endl;
+    cout << phi_val << endl;
     phi_val = idx.Phi(phi_val); // sa-1 until we find n (j-i times)
   }
 
