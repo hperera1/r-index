@@ -167,16 +167,6 @@ public:
           successor = pred.select(successor_rank);
         }
 
-        if(sa_index == 24522891) {
-          cout << "break" << endl;
-        }
-        if(sa_index == 24522892) {
-          cout << "break" << endl;
-        }
-        if(sa_index == 24522893) {
-          cout << "break" << endl;
-        }
-
         sa_graph[sa_index] = curr_pred; // sample -> curr_pred
         bounds[phi_x_inv[esa_sorted[j]]].first = esa_sorted[j] - ssa[i - 1].first; // lower_bound
         bounds[phi_x_inv[esa_sorted[j]]].second = successor - unsorted_ssa[sa_index].first; // upper_bound
