@@ -139,11 +139,6 @@ public:
         assert(samples_last_vec.size() == r);
         cout << "done. " << endl<<endl;
 
-        for (size_t i = 130; i < 160; i++) {
-          cout << i << ": " << samples_first_vec[i].first << " " << samples_last_vec[i] << endl;
-        }
-
-        cout << "\n";
         cout << "(3/3) Building phi function ..." << flush;
         std::vector<std::pair<ulint, ulint>> unsorted_samples_first_vec = samples_first_vec; // we need an unsorted ssa temporarily
         build_phi(samples_first_vec, samples_last_vec); //
@@ -153,10 +148,6 @@ public:
         rads rads_csa = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
         csa = rads_csa;
         cout << "done." << endl << endl;
-
-        // cout << "(4/3) Query tests ..." << endl;
-        // cout << "Trying to find sa_i = 6 ..." << endl;
-        // cout << "query result: " << csa.query(6, bwt, pred_to_run, pred, samples_last_vec) << endl;
     }
 
     void from_bwt(std::string fname) {
@@ -178,10 +169,16 @@ public:
         cout << "log2(r) = " << log2(double(r)) << endl;
         cout << "log2(n/r) = " << log2(double(bwt.size())/r) << endl << endl;
 
-        // build_phi sorts the start samples | i assume that phi_inverse would sort the end samples.
+        cout << "\n";
         cout << "(3/3) Building phi function ..." << flush;
-        build_phi(samples_first_vec, samples_last_vec);
-        cout << " done. " << endl<<endl;
+        std::vector<std::pair<ulint, ulint>> unsorted_samples_first_vec = samples_first_vec; // we need an unsorted ssa temporarily
+        build_phi(samples_first_vec, samples_last_vec); //
+        cout << " done. " << endl << endl;
+
+        cout << "(3.5/3) Building rads ..." << endl;
+        rads rads_csa = rads(unsorted_samples_first_vec, samples_first_vec, samples_last_vec, pred);
+        csa = rads_csa;
+        cout << "done." << endl << endl;
     }
 
     /*

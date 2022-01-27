@@ -55,17 +55,18 @@ ulint query_n(string esa_filename, r_index<> &idx, uint sa_n) {
   ulint run;
   r = esa.size();
 
+  cout << "\n";
+  cout << idx.Phi(39870830) << endl;
+  cout << idx.Phi(39870831) << endl;
+  cout << idx.Phi(39870832) << endl;
+  cout << "\n";
+  
   run = rle_bwt.run_of_position(sa_n); // run number
   j = rle_bwt.run_range(run).second; // run ends at this value
   ulint phi_val = esa[run]; // end sample at specified run
 
-  // cout << "run: " << run << endl;
-  // cout << "run l: " << j << endl;
-  // cout << "sample: " << phi_val << endl;
-  // cout << "distance: " << j-sa_n << endl << endl;
-
   for (size_t iter = 0; iter < (j - sa_n); iter++) {
-    // cout << phi_val << endl;
+    cout << phi_val << endl;
     phi_val = idx.Phi(phi_val); // sa-1 until we find n (j-i times)
   }
 
@@ -74,8 +75,8 @@ ulint query_n(string esa_filename, r_index<> &idx, uint sa_n) {
 
 // queries every generated sample.
 void query_random(std::set<ulint> &samples, string esa_filename, r_index<> idx) {
-  string bwt = idx.get_bwt();          // ? these calls take quite a while ?
-  rle_string rle_bwt = rle_string(bwt); // ? are these two calls avoidable ?
+  string bwt = idx.get_bwt();
+  rle_string rle_bwt = rle_string(bwt);
   ulint n = rle_bwt.size();
   ulint r = idx.number_of_runs();
   ulint j;
@@ -171,35 +172,25 @@ void run(string filename, string esa_filename, ulint num_samples, uint sa_n) {
   // 0 means we query the whole index but if followed by a nonzero integer we query that value.
   if(num_samples == 0) {
     if(sa_n == 0) {
-      cout << "\nsa all." << endl << endl;
       query_all(esa_filename, idx);
     }
     else {
-      // cout << "\nsa n." << endl << endl;
       bwt = idx.get_bwt();
       rle_bwt = rle_string(bwt);
       ulint n = rle_bwt.size();
       get_esa(esa_filename, n, esa);
-      // cout << "esa size: " << esa.size() << endl;
-      // cout << "bwt size: " << n << endl;
-      // for(size_t i = 140; i <= 170; i++) {
-      //   cout << i << ": " << esa[i] << endl;
+
+      // ofstream samples;
+      // samples.open("../rasa_tests/samples.txt");
+      // for(size_t i = 0; i < sa_n; i++) {
+      //   ulint query_result = query_n(esa_filename, idx, i);
+      //   samples << query_result;
+      //   samples << "\n";
       // }
-      //
-      // cout << "sa[21652738]: " << esa[21652738] << endl;
-      // cout << "sa[21652738]: " << esa[25051523] << endl;
+      // samples.close();
 
-      ofstream samples;
-      samples.open("../rasa_tests/samples.txt");
-      for(size_t i = 0; i < sa_n; i++) {
-        ulint query_result = query_n(esa_filename, idx, i);
-        samples << query_result;
-        samples << "\n";
-      }
-      samples.close();
-
-      // ulint result = query_n(esa_filename, idx, sa_n);
-      // cout << "sa[i]: " << result << endl;
+      ulint result = query_n(esa_filename, idx, sa_n);
+      cout << "sa[i]: " << result << endl;
     }
   }
   else {

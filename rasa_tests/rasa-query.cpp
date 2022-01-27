@@ -75,9 +75,36 @@ void run(string filename, string ssa_filename, ulint num_samples) {
   ulint ulint_sample;
   ulint query_result;
   for(size_t i = 0; i <= num_samples; i++) {
-    // if(i == 546) {
-    //   cout << "break" << endl;
-    // }
+    if(i == 10588843) {
+      cout << "break" << endl;
+    }
+    if(i == 11712833) {
+      cout << "break" << endl;
+    }
+    if(i == 14700902) {
+      cout << "break" << endl;
+    }
+    if(i == 17675849) {
+      cout << "break" << endl;
+    }
+    if(i == 20505162) {
+      cout << "break" << endl;
+    }
+    if(i == 20851724) {
+      cout << "break" << endl;
+    }
+    if(i == 24248872) {
+      cout << "break" << endl;
+    }
+    if(i == 24321815) {
+      cout << "break" << endl;
+    }
+    if(i == 27643627) {
+      cout << "break" << endl;
+    }
+    if(i == 28080062) {
+      cout << "break" << endl;
+    }
 
     getline(in_samples, string_sample);
     ulint_sample = strtoul(string_sample.c_str(), NULL, 0);
@@ -92,7 +119,7 @@ void run(string filename, string ssa_filename, ulint num_samples) {
     }
   }
 
-  cout << "all good!" << endl;
+  // cout << "all good!" << endl;
   // query_result = query_n(idx, num_samples);
   // cout << "result: " << query_result << endl;
 }
