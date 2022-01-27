@@ -55,18 +55,12 @@ ulint query_n(string esa_filename, r_index<> &idx, uint sa_n) {
   ulint run;
   r = esa.size();
 
-  cout << "\n";
-  cout << idx.Phi(39870830) << endl;
-  cout << idx.Phi(39870831) << endl;
-  cout << idx.Phi(39870832) << endl;
-  cout << "\n";
-  
   run = rle_bwt.run_of_position(sa_n); // run number
   j = rle_bwt.run_range(run).second; // run ends at this value
   ulint phi_val = esa[run]; // end sample at specified run
 
   for (size_t iter = 0; iter < (j - sa_n); iter++) {
-    cout << phi_val << endl;
+    // cout << phi_val << endl;
     phi_val = idx.Phi(phi_val); // sa-1 until we find n (j-i times)
   }
 
@@ -180,17 +174,17 @@ void run(string filename, string esa_filename, ulint num_samples, uint sa_n) {
       ulint n = rle_bwt.size();
       get_esa(esa_filename, n, esa);
 
-      // ofstream samples;
-      // samples.open("../rasa_tests/samples.txt");
-      // for(size_t i = 0; i < sa_n; i++) {
-      //   ulint query_result = query_n(esa_filename, idx, i);
-      //   samples << query_result;
-      //   samples << "\n";
-      // }
-      // samples.close();
+      ofstream samples;
+      samples.open("../rasa_tests/chr19_1_samples.txt");
+      for(size_t i = 0; i < sa_n; i++) {
+        ulint query_result = query_n(esa_filename, idx, i);
+        samples << query_result;
+        samples << "\n";
+      }
+      samples.close();
 
-      ulint result = query_n(esa_filename, idx, sa_n);
-      cout << "sa[i]: " << result << endl;
+      // ulint result = query_n(esa_filename, idx, sa_n);
+      // cout << "sa[i]: " << result << endl;
     }
   }
   else {

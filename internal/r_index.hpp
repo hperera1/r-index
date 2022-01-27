@@ -127,6 +127,7 @@ public:
         int log_r = bitsize(uint64_t(r));
         int log_n = bitsize(uint64_t(bwt.size()));
         cout << "Number of BWT equal-letter runs: r = " << r << endl;
+        cout << "BWT size: n = " << n << endl;
         cout << "Rate n/r = " << double(bwt.size())/r << endl;
         cout << "log2(r) = " << log2(double(r)) << endl;
         cout << "log2(n/r) = " << log2(double(bwt.size())/r) << endl;
