@@ -234,6 +234,11 @@ public:
         return {range1, k1};
     }
 
+    /*
+     * Function to query the r-index using the csa.
+     * sa_i: index you would like to query.
+     * ssa: start samples as the r_index using Phi.
+     */
     ulint query_csa(ulint sa_i, std::vector<ulint> &ssa) {
       return csa.query(sa_i, bwt, pred_to_run, pred, samples_last, ssa);
     }

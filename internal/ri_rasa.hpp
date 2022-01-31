@@ -67,9 +67,13 @@ public:
     return *this;
   }
 
-  // TO-DO for both constructions: how to make efficient?
-  // construction for phi_inverse
-  // unsorted_ssa: samples_first before sort | ssa: sorted samples_first (post phi) | esa: samples_last | pred: predecessor data structure used to calculate successors and preds
+  //! Build the csa/rads to be used with Phi^-1.
+  /*!
+    \param unsorted_ssa Non-sorted start samples.
+    \param ssa Sorted start samples.
+    \param esa Non-sorted end samples.
+    \param pred Predecessor bit vector. Used to calculate successors and predecessors.
+  */
   void build_rads_phi_inv(std::vector<std::pair<ulint, ulint>> &unsorted_ssa, std::vector<std::pair<ulint, ulint>> &ssa, std::vector<ulint> &esa, sparse_bv_type &pred) {
     assert(ssa.size() == esa.size());
     std::vector<ulint> esa_sorted = esa;
@@ -157,8 +161,8 @@ public:
       if(esa_sorted[j] < ssa[i].first) { // this will always be false on the first iteration. this means so long as the end sample is smaller than the start sample
         ulint sa_index = phi_x_inv[esa_sorted[j]];
         ulint successor = 0;
-        // ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
         ulint successor_rank = pred.predecessor_rank_circular(unsorted_ssa[sa_index].first) + 2;
+        // ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
         // ulint predecessor = pred.select(successor_rank - 1);
         if(successor_rank >= pred.number_of_1()) { // this case happens when we are getting the successor of the largest sample
           successor = unsorted_ssa[sa_index].first + 1; // if true, then successor is just one bigger because the cost will be 1
@@ -180,10 +184,11 @@ public:
 
     // if there are any leftover samples that need to point over to the last curr_pred that gets set, this is necessary
     while(j < esa.size()) {
-      ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 2;
-      // ulint predecessor = pred.select(successor_rank - 1);
-      ulint successor = 0;
       ulint sa_index = phi_x_inv[esa_sorted[j]];
+      ulint successor = 0;
+      ulint successor_rank = pred.predecessor_rank_circular(unsorted_ssa[sa_index].first) + 2;
+      // ulint successor_rank = pred.predecessor_rank_circular(ssa[phi_x_inv[esa_sorted[i]]].first) + 1;
+      // ulint predecessor = pred.select(successor_rank - 1);
       if(successor_rank >= pred.number_of_1()) {
         successor = unsorted_ssa[sa_index].first + 1;
       }
@@ -198,7 +203,10 @@ public:
     }
   }
 
-  // find_cycles() finds all cycles in our graph.
+  //! Finds the cycles contained in the CSA graph.
+  /*!
+    \param ssa Start samples.
+  */
   void find_cycles(std::vector<std::pair<ulint, ulint>> &ssa) {
     std::vector<uint> indegrees(sa_graph.size(), 0); // indegrees of the nodes
     std::vector<bool> visited(sa_graph.size(), false); // visited nodes so far
@@ -265,11 +273,21 @@ public:
     ulint run = bwt.run_of_position(sa_i);
     ulint run_l = bwt.run_range(run).second;
     ulint sa_j = sa[run]; // sa value at position 'run'
-    helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, sa, ssa); // after helper_query, sa_j will be the sample when we are done querying.
+    helper_query(sa_j, run_l-sa_i, run, bwt, pred_to_run, pred, sa, ssa); // after helper_query, sa_j will be the sample we want.
     return sa_j;
   }
 
-  // replace in_cycle by using pred isntead of sa_map
+  //! Helper function that finds whether a sample is in a tree, therefore using it. If it is not in a tree it iterates Phi.
+  /*!
+    \param sa_j Sample at the end of the run that sa_i can be found in.
+    \param d Distance between sa_j and sa_i.
+    \param run Run in the r-index the sample is contained in.
+    \param bwt BWT stored in the r-index.
+    \param pred_to_run Bitvector providing us with the run of predecessors.
+    \param pred Predecessor data structure from the r-index.
+    \param sa Suffix array bitvector, in this case samples_last.
+    \param ssa Unsorted start samples retrieved from the .ssa file post-construction.
+  */
   void helper_query(ulint &sa_j, ulint d, ulint run, rle_string_t &bwt, int_vector<> &pred_to_run, sparse_bv_type &pred, int_vector<> &sa, std::vector<ulint> &ssa) {
     ulint sa_jr;
     ulint sa_prime;
@@ -282,15 +300,22 @@ public:
       cost = sa_j - sa_prime; // distance between sample and predecessor
 
       // check if pred is in a cycle
+      // if on the last iteration (d == 1) just iterate phi
       if(in_cycle(pred_to_run[sa_jr]) && d != 1) {
         run = pred_to_run[sa_jr];
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)]; // get the tree that the sample belongs to.
-        std::tuple<ulint, ulint, ulint> sa_prime_d_cost = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d); // tuple containing new sample run, distance travelled, and cost accumulated
+
+        // tuple containing new sample run, distance travelled, and cost accumulated
+        std::tuple<ulint, ulint, ulint> sa_prime_d_cost = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
         result = ssa[std::get<0>(sa_prime_d_cost)] + std::get<2>(sa_prime_d_cost); // sa_j is being set as the new sample
 
+        // NOTE: At the start of testing I had problems exiting the tree at the last sample.
+        // This might have been a bound problem and if we were to retrieve the same sample that
+        // we started with, I would iterate Phi. This should be checked because it is an inefficiency.
         if(result == sa_j) {
+          cout << "result = sa_j; run = " << run << endl;
           ulint delta = sa_prime < sa_j ? sa_j - sa_prime : sa_j + 1;
-          ulint prev_sample = sa[pred_to_run[sa_jr] - 1]; // we dont have samples_last, need to pass it in.
+          ulint prev_sample = sa[pred_to_run[sa_jr] - 1];
           sa_j = (prev_sample + delta) % bwt.size();
           run = pred_to_run[pred.predecessor_rank_circular(sa_j)];
           d -= 1;
@@ -303,15 +328,19 @@ public:
       }
       else {
         // continue the iteration using phi
-        ulint delta = sa_prime < sa_j ? sa_j - sa_prime : sa_j + 1;
-        ulint prev_sample = sa[pred_to_run[sa_jr] - 1]; // we dont have samples_last, need to pass it in.
-        sa_j = (prev_sample + delta) % bwt.size();
-        run = pred_to_run[pred.predecessor_rank_circular(sa_j)];
+        ulint delta = sa_prime < sa_j ? sa_j - sa_prime : sa_j + 1; // distance between sample and its predecessor.
+        ulint prev_sample = sa[pred_to_run[sa_jr] - 1]; // use samples_last (sa) to find the previous sample.
+        sa_j = (prev_sample + delta) % bwt.size(); // get the next sample using delta and prev_sample.
+        run = pred_to_run[pred.predecessor_rank_circular(sa_j)]; // run of new sample.
         d -= 1;
       }
     }
   }
 
+  //! Checks if the provided run is in a tree.
+  /*!
+    \param sa_run Run to look for in trees_bv.
+  */
   bool in_cycle(ulint sa_run) {
     if(trees_bv[sa_run]) {
       return true;

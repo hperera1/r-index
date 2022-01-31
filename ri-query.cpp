@@ -23,7 +23,8 @@ void help() {
   cout << "   <index>   index file (with extension .ri)";
   cout << "\n   <end samples>   .esa file";
   cout << "\n   <# of queries>   inputting '0', queries the entire index";
-  cout << "\n   (optional) <index of query>   provide index to query" << endl;
+  cout << "\n   (optional) <index of query>   provide specific index to query";
+  cout << "\n   eg. ri-query abc.fasta.ri abc.fasta.esa 0 100"
   exit(0);
 }
 
@@ -175,7 +176,7 @@ void run(string filename, string esa_filename, ulint num_samples, uint sa_n) {
       get_esa(esa_filename, n, esa);
 
       ofstream samples;
-      samples.open("../rasa_tests/chr19_1_samples.txt");
+      samples.open("../rasa_tests/chr19_2_samples.txt");
       for(size_t i = 0; i < sa_n; i++) {
         ulint query_result = query_n(esa_filename, idx, i);
         samples << query_result;

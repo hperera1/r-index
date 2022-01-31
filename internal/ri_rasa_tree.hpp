@@ -7,9 +7,11 @@
 #include "sparse_hyb_vector.hpp"
 
 using namespace sdsl;
+
 namespace ri {
   template<class sparse_bv_type = sparse_sd_vector,
            class rle_string_t = rle_string_sd>
+
 //! Tree data structure that stores the samples contained within a cycle. Performs queries.
 class rads_tree {
 public:
@@ -20,6 +22,13 @@ public:
   ulint height; // height of the tree starting at 0 || sdsl::serialize
 
   rads_tree(){};
+  //! rads_tree constructor that recursively builds a balanced binary interval tree using the samples provided.
+  /*!
+    \param cycle Cycle of samples to be built into a tree.
+    \param bounds Calculated bounds used for lower and upper bound calculation.
+    \param tree_num Number of tree.
+    \param tree_pointers Vector of tree pointers that is added to every time a leaf is set.
+  */
   rads_tree(std::vector<ulint> &cycle, std::vector<std::pair<ulint, ulint>> &bounds, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers) {
     size_t n = cycle.size(); // path size
     height = ceil(log2(n)); // height of the tree
@@ -48,7 +57,6 @@ public:
   , height(move(other_tree.height))
   {}
 
-  // we need a copy and swap operator?
   rads_tree& operator=(const rads_tree &other_tree) {
     return *this = rads_tree(other_tree);
   }
@@ -62,7 +70,16 @@ public:
     return *this;
   }
 
-  // recursively constructs a balanced binary tree from the leaves up to the root.
+  //! Helper to the constructor that goes to left and right children and sets leaf nodes once they have been encountered, and calculates the parents cost & bounds.
+  /*!
+    \param bounds Sample bounds that were calculated during construction.
+    \param node Tree node that we are currently on.
+    \param begin Left value that we are covering in the current interval.
+    \param end Right value that we are covering in the current interval.
+    \param tree_num Tree # we are building currently.
+    \param tree_pointers Pointers that are added to for eveyr leaf we set.
+    \param leaf_bv Bitvector to know which nodes are leaf nodes.
+  */
   void constructor_helper(std::vector<std::pair<ulint, ulint>> &bounds, size_t node, size_t begin, size_t end, uint tree_num, std::vector<std::tuple<ulint, ulint, uint>> &tree_pointers, std::vector<bool> &leaf_bv) {
     size_t mid = (begin + end)/2;
     if(begin >= end) { // condition which creates the leaf nodes.
@@ -81,7 +98,11 @@ public:
     tree[node].second = std::min(tree[2*node].second, tree[2*node+1].second - tree[2*node].first); // edge threshold
   }
 
-  // args: leaf_pos, cost, d | returns: returns new sample index and distance travelled (sa', d)
+  //! Query function.
+  /*!
+    \param leaf_pos Leaf node to begin traversal.
+    \param d Distance that we would ideally travel.
+  */
   std::tuple<ulint, ulint, ulint> query(ulint leaf_pos, uint cost, uint d) {
     // begin climbing the tree and only collect when we go to a sibling.
     // when you go to a parent do not collect the cost, that is if the parent has the same left most node.
@@ -89,9 +110,12 @@ public:
     return (climb(leaf_pos, cost, d));
   }
 
-  // climbing conditions
-  // 1. node is non-negative
-  // 2. cost does not exceed nodes threshold
+  //! CLimbing traversal function. Climb until we cannot and then begin descending.
+  /*!
+    \param node_pos Node to start climbing from.
+    \param cost Cost that we will carry and add to as we climb.
+    \param d Distance we need to travel.
+  */
   std::tuple<ulint, ulint, ulint> climb(ulint node_pos, uint &cost, uint d) {
     ulint current_height = height; // we can enter at either the height or height - 1
     ulint start_pos = node_pos;
@@ -120,7 +144,7 @@ public:
       }
 
       // check if when we shift up we get to the root of the left subtree
-      // aka were on the right most branch of the left subtree
+      // meaning were on the right most branch of the left subtree
       // this means we can skip forward to the right subtree
       prev_pos = node_pos;
       if(node_pos>>(__builtin_ctzl(~node_pos)) == 2) {
@@ -171,12 +195,12 @@ public:
     last_bit = (prev_pos & 1);
     if(last_bit == 1) {
       while(!leaf_node_bv[node_pos]) {
-        if(!(tree[node_pos].second > 0) || !(cost < tree[node_pos].second)) { // this means we keep getting blocked
+        if(!(tree[node_pos].second > 0) || !(cost < tree[node_pos].second)) { // this means we keep getting denied
           node_pos = (node_pos << 1);
           current_height += 1;
         }
         else {
-          node_pos = (node_pos << 1) + 1; // once we find a bound that were allowed to go through lets just go to the right child (or should it be the left child)
+          node_pos = (node_pos << 1) + 1; // once we find a bound that were allowed to go through, go to the right child.
           current_height += 1;
           cost += tree[node_pos - 1].first;
           descend(start_pos, node_pos, cost, d, current_height); // descend using new node_pos, cost, and d
@@ -191,12 +215,18 @@ public:
       descend(start_pos, node_pos, cost, d, current_height); // descend using new node_pos, cost, and d
     }
 
-    ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
+    ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end to know how far we travelled
     ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
     return (std::make_tuple(leaf_samples[leaf_sample_index], distance, cost)); // return new sample and new distance
   }
 
-  // args: node_pos: current node_pos, cost: cumulated cost, d: distance of where we came in from to the sample we're looking for.
+  //! Descent function. This descends until we reach a leaf node making the proper movements based on our cost and the bounds we encounter.
+  /*!
+    \param start_pos Node we started the whole traversal from.
+    \param node_pos Node position that we are currently at.
+    \param cost Cost we have accumulated so far.
+    \param current_height Current height in the tree that we're at.
+  */
   void descend(ulint start_pos, ulint &node_pos, uint &cost, uint d, ulint current_height) {
     ulint prev_pos = node_pos;
     while((node_pos < leaf_node_bv.size()) && !leaf_node_bv[node_pos]) { // while we are in the bounds of the tree and not at a leaf node
@@ -214,7 +244,7 @@ public:
           min_d_travelled = (int) calculate_d(start_pos, min_node);
 
           // this means we went too far when going to right sibling. go to right child instead
-          if(((int) d - min_d_travelled) < 0) {
+          if(((int) d - min_d_travelled) < 0) { // can this cast be avoided?
             node_pos -= 1;
             node_pos = node_pos << 1;
             node_pos += 1;
@@ -278,11 +308,13 @@ public:
     }
   }
 
-  // calculates the distance between leaf nodes: start_pos and end_pos. distance meaning the number of leaf nodes between these two indices.
+  //! Calculates the distance (number of leaf nodes between the two) between two node positions.
+  /*!
+    \param start_pos Left node to count from.
+    \param end_pos Right node to count until.
+  */
   ulint calculate_d(ulint start_pos, ulint end_pos) {
     ulint d = 0;
-    // cout << "start: " << start_pos << endl;
-    // cout << "end: " << end_pos << endl;
 
     if(start_pos >= left_most_i) { // starting from bottom layer
       if(end_pos >= left_most_i) { // going to bottom layer bot->bot
@@ -313,7 +345,6 @@ public:
       }
     }
 
-    // cout << "calc_d d: " << d << endl;
     return d;
   }
 
