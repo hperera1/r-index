@@ -110,7 +110,7 @@ public:
     return (climb(leaf_pos, cost, d));
   }
 
-  //! CLimbing traversal function. Climb until we cannot and then begin descending.
+  //! Climbing traversal function. Climb until we cannot and then begin descending.
   /*!
     \param node_pos Node to start climbing from.
     \param cost Cost that we will carry and add to as we climb.

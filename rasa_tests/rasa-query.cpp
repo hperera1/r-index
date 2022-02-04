@@ -22,6 +22,7 @@ void help() {
   cout << "rasa-query: random access to the csa data structure." << endl;
   cout << "Usage:       ri-query <index> <end samples> <# of queries>" << endl;
   cout << "   <index>   index file (with extension .ri)";
+  cout << "\n   <start samples>   .ssa file";
   cout << "\n   <# of queries>   get all samples up to 'n'" << endl;
   exit(0);
 }
@@ -88,7 +89,6 @@ void run(string filename, string ssa_filename, ulint num_samples) {
     }
   }
 
-  // cout << "all good!" << endl;
   // query_result = query_n(idx, num_samples);
   // cout << "result: " << query_result << endl;
 }

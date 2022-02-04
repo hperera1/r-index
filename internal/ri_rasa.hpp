@@ -240,6 +240,8 @@ public:
             is_cycle = true;
         }
 
+        // min threshold to remove really small cycles that arent worthwhile.
+
         // we can implement a min. path length threshold to include paths that
         // may not be cycles but can still be used to traverse samples.
         if(is_cycle) { // if the path is a cycle we construct a tree
@@ -252,7 +254,7 @@ public:
       }
     }
 
-    std::sort(tree_pointers.begin(), tree_pointers.end());
+    std::sort(tree_pointers.begin(), tree_pointers.end()); // sort based on the runs
     trees_bv = sparse_bv_type(temp_trees_bv);
     bounds.clear(); // clear because we dont need them anymore.
   }

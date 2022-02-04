@@ -22,9 +22,9 @@ void help() {
   cout << "Usage:       ri-query <index> <end samples> <# of queries>" << endl;
   cout << "   <index>   index file (with extension .ri)";
   cout << "\n   <end samples>   .esa file";
-  cout << "\n   <# of queries>   inputting '0', queries the entire index";
-  cout << "\n   (optional) <index of query>   provide specific index to query";
-  cout << "\n   eg. ri-query abc.fasta.ri abc.fasta.esa 0 100"
+  cout << "\n   <# of queries>   inputting '0 0', queries the entire index";
+  cout << "\n   <index of query>   provide specific index to query up to";
+  cout << "\n   eg. ri-query abc.fasta.ri abc.fasta.esa 0 100" << endl;
   exit(0);
 }
 
