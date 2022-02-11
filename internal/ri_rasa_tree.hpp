@@ -117,19 +117,19 @@ public:
     \param d Distance we need to travel.
   */
   std::tuple<ulint, ulint, ulint> climb(ulint node_pos, uint &cost, uint d) {
-    ulint current_height = height; // we can enter at either the height or height - 1
+    ulint current_height = height;
     ulint start_pos = node_pos;
     ulint prev_pos = node_pos;
+    int max_d_travelled = 0;
+    int last_bit = 0;
 
+    // we can enter at either the height or height - 1
     if(node_pos < left_most_i) {
       current_height -= 1;
     }
 
-    int max_d_travelled = 0;
-    int last_bit = 0;
-    ulint current_leftmost_node = (node_pos << (height - current_height));
-
     // climb up while the upper_bounds let us / climb up at least once if we are still at the start node
+    ulint current_leftmost_node = (node_pos << (height - current_height));
     while(((node_pos != 1) && (tree[node_pos].second > 0) && (cost < tree[node_pos].second)) || (start_pos == node_pos)) {
       int distance_diff = (int) d - max_d_travelled;
       last_bit = (node_pos & 1);
@@ -184,7 +184,7 @@ public:
         current_leftmost_node = (node_pos << (height - current_height));
       }
 
-      ulint max_node_pos = ((node_pos << (height - current_height)) + ((1 << (height - current_height)) - 1));
+      ulint max_node_pos = ((node_pos << (height - current_height)) + ((1 << (height - current_height)) - 1)); // furthest right node we can reach from current position
       ulint max_d = calculate_d(start_pos, max_node_pos); // (node_pos gets shifted by the distance to the leaves) + (1 shifted that many times left - 1)
       max_d_travelled = (int) max_d;
     }
@@ -229,6 +229,7 @@ public:
   */
   void descend(ulint start_pos, ulint &node_pos, uint &cost, uint d, ulint current_height) {
     ulint prev_pos = node_pos;
+
     while((node_pos < leaf_node_bv.size()) && !leaf_node_bv[node_pos]) { // while we are in the bounds of the tree and not at a leaf node
       // check min_d_travelled before descending to the next node
       // if its < 0 then that means we have moved past the interval our sample is contained in.
@@ -236,29 +237,29 @@ public:
       int min_d_travelled;
       int last_bit = (node_pos & 1);
       prev_pos = node_pos;
-      if(last_bit == 0) {
+      if(last_bit == 0) { // left node descent
         if((tree[node_pos].second > 0) && (cost < tree[node_pos].second)) {
           // if good, go to right sibling
-          node_pos += 1;
-          ulint min_node = (node_pos << (height - current_height));
+          ulint min_node = ((node_pos + 1) << (height - current_height));
           min_d_travelled = (int) calculate_d(start_pos, min_node);
-
-          // this means we went too far when going to right sibling. go to right child instead
-          if(((int) d - min_d_travelled) < 0) { // can this cast be avoided?
-            node_pos -= 1;
+          if(((int) d - min_d_travelled) < 0) {
+            // this means we would go too far when going to right sibling
+            // go to right child instead
             node_pos = node_pos << 1;
             node_pos += 1;
             current_height += 1;
             cost += tree[node_pos - 1].first;
           }
           else {
+            // go to right sibling
+            node_pos += 1;
             cost += tree[prev_pos].first;
           }
         }
         else {
           // if not good then go to left child and check on next iteration
-          current_height += 1;
           node_pos = node_pos << 1;
+          current_height += 1;
         }
       }
       else { // right node

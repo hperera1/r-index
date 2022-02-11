@@ -211,6 +211,7 @@ public:
     std::vector<uint> indegrees(sa_graph.size(), 0); // indegrees of the nodes
     std::vector<bool> visited(sa_graph.size(), false); // visited nodes so far
     auto temp_trees_bv = vector<bool>(sa_graph.size(), false);
+    size_t tree_counter = 0;
 
     // counting indegrees of the nodes
     for(size_t i = 1; i < sa_graph.size(); i++) {
@@ -245,7 +246,8 @@ public:
         // we can implement a min. path length threshold to include paths that
         // may not be cycles but can still be used to traverse samples.
         if(is_cycle) { // if the path is a cycle we construct a tree
-          rads_tree branch = rads_tree(current_path, bounds, trees.size(), tree_pointers);
+          rads_tree branch = rads_tree(current_path, bounds, tree_counter, tree_pointers);
+          tree_counter += 1;
           trees.push_back(branch);
           for(size_t i = 0; i < current_path.size()-1; i++) { // -1 because the the last leaf node in our cycle is useless for queries
             temp_trees_bv[current_path[i]] = true; // set the nodes that are in the cycle to true in our bitvector
