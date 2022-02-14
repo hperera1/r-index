@@ -231,15 +231,11 @@ public:
     ulint prev_pos = node_pos;
 
     while((node_pos < leaf_node_bv.size()) && !leaf_node_bv[node_pos]) { // while we are in the bounds of the tree and not at a leaf node
-      // check min_d_travelled before descending to the next node
-      // if its < 0 then that means we have moved past the interval our sample is contained in.
-      // if this is the case go to our left sibling
       int min_d_travelled;
       int last_bit = (node_pos & 1);
       prev_pos = node_pos;
       if(last_bit == 0) { // left node descent
-        if((tree[node_pos].second > 0) && (cost < tree[node_pos].second)) {
-          // if good, go to right sibling
+        if((tree[node_pos].second > 0) && (cost < tree[node_pos].second)) { // if good, go to right sibling
           ulint min_node = ((node_pos + 1) << (height - current_height));
           min_d_travelled = (int) calculate_d(start_pos, min_node);
           if(((int) d - min_d_travelled) < 0) {
@@ -288,7 +284,7 @@ public:
 
     ulint distance = calculate_d(start_pos, node_pos); // calculate the distance from start to end
     ulint leaf_sample_index = calculate_d(left_most_i, node_pos);
-    if((leaf_sample_index == (leaf_samples.size() - 1)) && (distance != 1)) { // this means were leaving off on the last samples which seems to be wrong?
+    if((leaf_sample_index == (leaf_samples.size() - 1)) && (distance != 1)) { // this means were leaving off on the last sample of the tree
       node_pos -= 1;
       cost -= tree[node_pos].first;
       if(!leaf_node_bv[node_pos]) { // if this is not a leaf node then go to its right child
@@ -300,12 +296,15 @@ public:
       descend(start_pos, node_pos, cost, d, current_height);
     }
 
+    // check min_d_travelled before descending to the next node
+    // if its < 0 then that means we have moved past the interval our sample is contained in.
+    // if this is the case go to our left sibling
     ulint min_node = (node_pos << (height - current_height));
     int min_d_travelled = (int) calculate_d(start_pos, min_node);
     if(((int) d - min_d_travelled) < 0) {
       node_pos -= 1;
       cost -= tree[node_pos].first;
-      descend(start_pos, node_pos, cost, d, current_height);
+      descend(start_pos, node_pos, cost, d, current_height); // descend again just in case there is tree left to be traversed
     }
   }
 
