@@ -308,27 +308,11 @@ public:
       if(in_cycle(pred_to_run[sa_jr]) && d != 1) {
         run = pred_to_run[sa_jr];
         std::tuple<ulint, ulint, uint> tree_info = tree_pointers[trees_bv.rank(run)]; // get the tree that the sample belongs to.
-
-        // tuple containing new sample run, distance travelled, and cost accumulated
-        std::tuple<ulint, ulint, ulint> sa_prime_d_cost = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d);
+        std::tuple<ulint, ulint, ulint> sa_prime_d_cost = trees[std::get<1>(tree_info)].query(std::get<2>(tree_info), cost, d); // tuple containing new sample run, distance travelled, and cost accumulated
         result = ssa[std::get<0>(sa_prime_d_cost)] + std::get<2>(sa_prime_d_cost); // sa_j is being set as the new sample
-
-        // NOTE: At the start of testing I had problems exiting the tree at the last sample.
-        // This might have been a bound problem and if we were to retrieve the same sample that
-        // we started with, I would iterate Phi. This should be checked because it is an inefficiency.
-        if(result == sa_j) {
-          cout << "result = sa_j; run = " << run << endl;
-          ulint delta = sa_prime < sa_j ? sa_j - sa_prime : sa_j + 1;
-          ulint prev_sample = sa[pred_to_run[sa_jr] - 1];
-          sa_j = (prev_sample + delta) % bwt.size();
-          run = pred_to_run[pred.predecessor_rank_circular(sa_j)];
-          d -= 1;
-        }
-        else {
-          sa_j = result;
-          run = pred_to_run[pred.predecessor_rank_circular(sa_j)];
-          d = d - std::get<1>(sa_prime_d_cost); // this is the distance left over.
-        }
+        sa_j = result;
+        run = pred_to_run[pred.predecessor_rank_circular(sa_j)];
+        d = d - std::get<1>(sa_prime_d_cost); // this is the distance left over.
       }
       else {
         // continue the iteration using phi
