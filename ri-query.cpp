@@ -158,43 +158,6 @@ void query_all(r_index<> idx, string sa_name) {
   cout << "n/r: " << (static_cast<float>(n)/static_cast<float>(r)) << endl;
 }
 
-// filename: r-index | esa_filename: end samples | num_samples: how many we want to query
-// void run(string filename, string esa_filename, ulint num_samples, uint sa_n) {
-//   r_index<> idx;
-//   idx.load_from_file(filename.c_str());
-//   ulint n = rle_bwt.size();
-//   std::set<ulint> query_samples;
-//   generate_samples(query_samples, num_samples, idx);
-//
-//   // 0 means we query the whole index but if followed by a nonzero integer we query that value.
-//   if(num_samples == 0) {
-//     if(sa_n == 0) {
-//       query_all(esa_filename, idx);
-//     }
-//     else {
-//       bwt = idx.get_bwt();
-//       rle_bwt = rle_string(bwt);
-//       ulint n = rle_bwt.size();
-//       get_sa(esa_filename, n, esa);
-//
-//       ofstream samples;
-//       samples.open("../rasa_tests/chr19_2_samples.txt");
-//       for(size_t i = 0; i < sa_n; i++) {
-//         ulint query_result = query_n(esa_filename, idx, i);
-//         samples << query_result;
-//         samples << "\n";
-//       }
-//       samples.close();
-//
-//       // ulint result = query_n(esa_filename, idx, sa_n);
-//       // cout << "sa[i]: " << result << endl;
-//     }
-//   }
-//   else {
-//     query_random(query_samples, esa_filename, idx);
-//   }
-// }
-
 int main(int argc, char** argv) {
   int ptr = 1;
   if(argc < 3) {
@@ -219,9 +182,14 @@ int main(int argc, char** argv) {
     }
     else if(strcmp(argv[3], "-u") == 0) {
       int sample_limit = atoi(argv[4]);
+      // ofstream samples;
+      // samples.open("../rasa_tests/chr19_1_samples.txt");
       for(size_t i = 0; i < sample_limit; i++) {
         ulint query_result = query_n(idx, argv[2], i);
+        // samples << query_result;
+        // samples << "\n";
       }
+      // samples.close();
     }
     else if(strcmp(argv[3], "-n") == 0) {
       query_n(idx, argv[2], stoul(argv[4]));
