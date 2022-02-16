@@ -7,6 +7,12 @@ ri_rasa_tree.hpp: handles tree construction and traversal at query time.
 
 (within r_index.hpp) CSA construction happens after building phi. In order to query the r-index an additional function called query_csa has been added which takes in an index (sa_i) and the SA samples needed (ssa).
 
+ri-query.cpp
+Queries the index provided solely using phi. Can query n random samples, up to n samples, or a specific sample.
+
+rasa-query.cpp
+Queries the index using the additional csa data structure built. Queries up to n samples or a specific sample.
+
 ### what hasn't been tested 
 
 ri_rasa.hpp:
