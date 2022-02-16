@@ -24,7 +24,8 @@ void help() {
   cout << "   <index>   index file (with extension .ri)";
   cout << "\n   <start samples>   .ssa file";
   cout << "\n   (optional) <-u | -n>   query up to the 'n'-th sample starting at zero, or query the 'n'-th sample";
-  cout << "\n   (optional) <n>   n for the previous argument" << endl;
+  cout << "\n   (optional) <n>   n for the previous argument";
+  cout << "\n   eg. rasa-query xyz.fasta.ri xyz.fasta.ssa -u 29000000 (queries up to the 29000000th sample)" << endl;
   exit(0);
 }
 
