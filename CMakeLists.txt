@@ -156,6 +156,13 @@ TARGET_LINK_LIBRARIES(ri-query divsufsort64)
 TARGET_LINK_LIBRARIES(ri-query z)
 TARGET_LINK_LIBRARIES(ri-query klib)
 
+add_executable(ri-sana ri-sana.cpp)
+TARGET_LINK_LIBRARIES(ri-sana sdsl)
+TARGET_LINK_LIBRARIES(ri-sana divsufsort)
+TARGET_LINK_LIBRARIES(ri-sana divsufsort64)
+TARGET_LINK_LIBRARIES(ri-sana z)
+TARGET_LINK_LIBRARIES(ri-sana klib)
+
 add_executable(sa_print sa_print.cpp)
 TARGET_LINK_LIBRARIES(sa_print sdsl)
 TARGET_LINK_LIBRARIES(sa_print divsufsort)

@@ -173,6 +173,9 @@ public:
         cout << "\n";
         cout << "(3/3) Building phi function ..." << flush;
         std::vector<std::pair<ulint, ulint>> unsorted_samples_first_vec = samples_first_vec; // we need an unsorted ssa temporarily
+
+
+
         build_phi(samples_first_vec, samples_last_vec); //
         cout << " done. " << endl << endl;
 
@@ -241,6 +244,29 @@ public:
      */
     ulint query_csa(ulint sa_i, std::vector<ulint> &ssa) {
       return csa.query(sa_i, bwt, pred_to_run, pred, samples_last, ssa);
+    }
+
+    void get_table_vals(std::vector<ulint> &ssa, std::vector<ulint> &bwt_pos, std::vector<ulint> &tails) {
+        // get bwt_pos sa[i] and sa[i-1]
+        // sa[0] points to sa[n]
+        // assert(ssa.size() == samples_last.size());
+        ulint n = samples_last.size();
+        ulint bwt_i = 0;
+        bwt_pos[0] = bwt_i;
+        tails[0] = samples_last[n - 1];
+        bwt_i += 1;
+        // ofstream textfile;
+        // textfile.open("table_values.txt");
+        // textfile << bwt_i << " " << ssa[0] << " " << samples_last[n - 1] << "\n";
+        cout << "getting vals" << endl;
+        for(size_t i = 1; i < n; i++) {
+            // ulint sa_i = ssa[i]; // sa[i]
+            ulint sa_j = samples_last[i - 1];
+            bwt_pos[i] = bwt_i;
+            tails[i] = sa_j;
+            // textfile << bwt_i << " " << sa_i << " " << sa_j << "\n";
+            bwt_i += bwt.run_range(i).second;
+        }
     }
 
     /*
